@@ -192,31 +192,45 @@ export default function ChatRoomPage() {
   return (
     <div className="flex flex-col h-screen relative">
       {/* ヘッダー */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center space-x-3">
-          {profile?.profile_image_url && (
-            <div className="w-10 h-10 rounded-full overflow-hidden">
-              <img
-                src={profile.profile_image_url}
-                alt={profile.nickname}
-                className="w-full h-full object-cover"
-              />
+      <div className="sticky top-16 z-10 bg-white border-b shadow-sm">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 ring-2 ring-pink-100">
+                {profile?.profile_image_url ? (
+                  <img
+                    src={profile.profile_image_url}
+                    alt={profile.nickname || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                    👤
+                  </div>
+                )}
+              </div>
+              <div>
+                <h2 className="font-bold text-xl text-gray-900">{profile?.nickname || 'Anonymous'}</h2>
+                <div className="flex items-center space-x-2 mt-0.5">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <p className="text-sm text-gray-600">オンライン</p>
+                </div>
+              </div>
             </div>
-          )}
-          <div className="font-medium text-gray-900">{profile?.nickname}</div>
+            {/* スーパーチャットボタン */}
+            {user && profile?.is_influencer && user.id !== profile.id && (
+              <SuperChat
+                influencerId={profile.id}
+                influencerName={profile.nickname || 'Anonymous'}
+              />
+            )}
+          </div>
         </div>
       </div>
 
-      {/* スーパーチャット */}
-      {user && profile?.is_influencer && user.id !== profile.id && (
-        <SuperChat
-          influencerId={profile.id}
-          influencerName={profile.nickname}
-        />
-      )}
-
       {/* メッセージエリア */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto pt-20 px-4 pb-24 space-y-4 bg-gray-50">
+        <div className="max-w-3xl mx-auto">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -235,12 +249,14 @@ export default function ChatRoomPage() {
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* メッセージ入力 */}
-      <form onSubmit={handleSubmit} className="bg-white border-t border-gray-200 p-4">
-        <div className="flex space-x-3">
+      <form onSubmit={handleSubmit} className="fixed bottom-16 left-0 right-0 bg-white border-t shadow-sm p-4 z-10">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex space-x-3 px-4">
           <input
             type="text"
             value={newMessage}
@@ -254,6 +270,7 @@ export default function ChatRoomPage() {
           >
             送信
           </button>
+          </div>
         </div>
       </form>
     </div>

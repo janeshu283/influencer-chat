@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FaHome, FaComments, FaUser } from 'react-icons/fa'
+import { FaHome, FaComments, FaUser, FaCreditCard } from 'react-icons/fa'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function BottomNav() {
@@ -47,6 +47,15 @@ export default function BottomNav() {
             <div className={`absolute inset-0 bg-pink-50 scale-0 group-hover:scale-100 transition-transform duration-200 rounded-lg ${pathname?.startsWith('/profile') ? 'scale-100' : ''}`} />
             <FaUser className={`text-xl relative ${isActive('/profile')}`} />
             <span className={`mt-1 text-xs relative ${isActive('/profile')}`}>マイページ</span>
+          </Link>
+
+          <Link
+            href="/settings/payment"
+            className="flex flex-col items-center w-20 relative group"
+          >
+            <div className={`absolute inset-0 bg-pink-50 scale-0 group-hover:scale-100 transition-transform duration-200 rounded-lg ${pathname?.startsWith('/settings/payment') ? 'scale-100' : ''}`} />
+            <FaCreditCard className={`text-xl relative ${isActive('/settings/payment')}`} />
+            <span className={`mt-1 text-xs relative ${isActive('/settings/payment')}`}>支払い</span>
           </Link>
         </div>
       </div>

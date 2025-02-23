@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('profiles')
           .upsert({
             id: data.user.id,
+            email: email,
             nickname: profile.nickname,
             instagram: profile.instagram,
             twitter: profile.twitter,

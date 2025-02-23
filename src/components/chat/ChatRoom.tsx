@@ -1,16 +1,59 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import type { Message, Profile } from '@/types/supabase'
+import SuperChatButton from './SuperChatButton'
 
 interface ChatRoomProps {
   roomId: string
   currentUserId: string
 }
 
+interface ChatRoomHeader {
+  profile: Profile;
+}
+
+function ChatRoomHeader({ profile }: ChatRoomHeader) {
+  return (
+    <div className="bg-white border-b shadow-sm">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 ring-2 ring-pink-100">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.username || 'Profile'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                  👤
+                </div>
+              )}
+            </div>
+            <div>
+              <h2 className="font-bold text-xl text-gray-900">{profile.username || 'Anonymous'}</h2>
+              <div className="flex items-center space-x-2 mt-0.5">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <p className="text-sm text-gray-600">{profile.status || 'オンライン'}</p>
+              </div>
+            </div>
+          </div>
+          <SuperChatButton onSendSuperChat={async (amount, message) => {
+            // TODO: スーパーチャットの処理を実装
+            console.log('スーパーチャット:', { amount, message });
+          }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
   const [messages, setMessages] = useState<(Message & { sender: Profile })[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [influencer, setInfluencer] = useState<Profile | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   // Using the imported supabase instance
 
@@ -23,6 +66,29 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
   }, [messages])
 
   useEffect(() => {
+    // インフルエンサー情報の読み込み
+    const loadInfluencer = async () => {
+      const { data: chatRoom } = await supabase
+        .from('chat_rooms')
+        .select('influencer_id')
+        .eq('id', roomId)
+        .single();
+
+      if (chatRoom) {
+        const { data: influencerData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', chatRoom.influencer_id)
+          .single();
+
+        if (influencerData) {
+          setInfluencer(influencerData);
+        }
+      }
+    };
+
+    loadInfluencer();
+
     // メッセージの初期読み込み
     const loadMessages = async () => {
       const { data, error } = await supabase
@@ -105,9 +171,17 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
     return <div className="flex justify-center p-4">Loading...</div>
   }
 
+  if (loading || !influencer) {
+    return <div className="flex justify-center p-4">Loading...</div>
+  }
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex flex-col h-full bg-gray-50">
+      <div className="sticky top-0 z-10">
+        <ChatRoomHeader profile={influencer} />
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+        <div className="max-w-3xl mx-auto">
         {messages.map((message, index) => {
           // メッセージの日付をフォーマット
           const messageDate = new Date(message.created_at)
@@ -158,10 +232,12 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
             </div>
           )
         })}
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      <form onSubmit={sendMessage} className="p-4 border-t">
+      <form onSubmit={sendMessage} className="p-4 border-t bg-white shadow-md">
+        <div className="max-w-3xl mx-auto">
         <div className="flex space-x-2">
           <input
             type="text"
@@ -176,6 +252,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           >
             送信
           </button>
+        </div>
         </div>
       </form>
     </div>
