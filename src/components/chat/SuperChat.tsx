@@ -99,6 +99,11 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
           headers: Object.fromEntries(response.headers.entries())
         })
 
+        if (data.url) {
+          window.location.href = data.url
+          return
+        }
+
         if (!response.ok) {
           throw new Error(data.error || data.details || 'エラーが発生しました')
         }

@@ -8,12 +8,12 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const secretKey = process.env.STRIPE_SECRET_KEY.trim();
 
 // 基本的な形式チェック
-if (!/^sk_test_[A-Za-z0-9]+$/.test(secretKey)) {
+if (!secretKey.startsWith('sk_')) {
   throw new Error('Invalid Stripe secret key format');
 }
 
 export const stripe = new Stripe(secretKey, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-01-27.acacia',
   typescript: true,
   timeout: 20000,
   maxNetworkRetries: 2,

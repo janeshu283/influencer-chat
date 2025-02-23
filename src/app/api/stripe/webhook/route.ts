@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const body = await req.text()
   const signature = headers().get('stripe-signature')!
 
-  let event
+  let event: any
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
   console.log('Webhook event received:', event.type);
 
-  switch (event.type) {
+  switch (event.type as 'checkout.session.completed' | 'setup_intent.succeeded' | 'setup_intent.setup_failed') {
     case 'checkout.session.completed': {
       const session = event.data.object as any;
 
@@ -29,8 +29,8 @@ export async function POST(req: Request) {
       const { error } = await supabase.from('superchat').insert({
         influencer_id: session.metadata.influencerId,
         user_id: session.metadata.userId,
-        amount: session.amount_total,
-        message: session.metadata.message,
+        amount: session.amount_total / 100, // Stripeは金額を最小単位（円）で扱うため100で割る
+        message: session.metadata.message || '',
         payment_status: 'completed',
         stripe_session_id: session.id,
       });
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       break;
     }
 
-    case 'setup_intent.failed': {
+    case 'setup_intent.setup_failed': {
       const setupIntent = event.data.object as any;
       console.error('Card setup failed:', {
         customerId: setupIntent.customer,

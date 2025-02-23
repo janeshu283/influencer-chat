@@ -16,7 +16,7 @@ const initializeStripe = () => {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2023-10-16',
+      apiVersion: '2025-01-27.acacia',
     })
     console.log('Stripe initialized successfully')
     return stripe
@@ -46,11 +46,7 @@ if (!stripe || !supabase) {
   throw new Error('Failed to initialize required services')
 }
 
-
-
 export async function POST(req: Request) {
-  const stripe = initializeStripe()
-  const supabase = initializeSupabase()
 
   // CORSヘッダーを設定
   const headers = {
@@ -173,7 +169,7 @@ export async function POST(req: Request) {
     }
 
     // Stripeの支払いセッションを作成
-    const sessionConfig = {
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: profile.stripe_customer_id,
       payment_method_types: ['card'],
       line_items: [
@@ -212,6 +208,22 @@ export async function POST(req: Request) {
       if (!session.url) {
         console.error('Stripe session created but URL is missing:', session)
         throw new Error('Stripe checkout URL is missing')
+      }
+
+      // セッション情報を一時保存
+      const { error: sessionError } = await supabase
+        .from('stripe_sessions')
+        .insert({
+          session_id: session.id,
+          user_id: userId,
+          influencer_id: influencerId,
+          amount: amount,
+          message: message || '',
+          status: 'pending'
+        })
+
+      if (sessionError) {
+        console.error('Failed to save session info:', sessionError)
       }
 
       return new NextResponse(

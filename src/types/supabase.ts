@@ -16,6 +16,9 @@ export interface Profile {
   is_admin?: boolean
   is_active?: boolean
   profile_image_url?: string
+  stripe_customer_id?: string
+  stripe_payment_method_id?: string
+  has_valid_card?: boolean
 }
 
 export interface Database {

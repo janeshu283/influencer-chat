@@ -35,7 +35,7 @@ function ChatRoomHeader({ profile }: ChatRoomHeader) {
               <h2 className="font-bold text-xl text-gray-900">{profile.username || 'Anonymous'}</h2>
               <div className="flex items-center space-x-2 mt-0.5">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <p className="text-sm text-gray-600">{profile.status || 'オンライン'}</p>
+                <p className="text-sm text-gray-600">オンライン</p>
               </div>
             </div>
           </div>

@@ -28,8 +28,7 @@ const stripePromise = loadStripe(publishableKey);
 stripePromise.then(
   (stripe) => {
     console.log('Stripe initialized successfully:', {
-      initialized: !!stripe,
-      mode: stripe?.getApiField?.('mode')
+      initialized: !!stripe
     });
   },
   (error) => console.error('Failed to initialize Stripe:', error)
