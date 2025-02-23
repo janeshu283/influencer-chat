@@ -19,7 +19,11 @@ export default function ProfileForm() {
   })
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Failed to get session:', error)
+        return
+      }
       setSession(session)
       if (session?.user?.id) {
         fetchProfile(session.user.id)

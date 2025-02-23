@@ -80,7 +80,7 @@ export default function InfluencersPage() {
         // 新しいチャットルームを作成
         console.log('Creating new chat room with:', {
           influencer_id: influencerId,
-          user_id: user.user.id
+          user_id: user.id
         })
 
         const { data: newRoom, error: createError } = await supabase

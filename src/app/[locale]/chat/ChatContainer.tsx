@@ -36,6 +36,7 @@ export default function ChatContainer() {
 
     const {
       data: { subscription },
+      error
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', session)
       setSession(session)
@@ -43,6 +44,11 @@ export default function ChatContainer() {
         router.push('/auth')
       }
     })
+
+    if (error) {
+      console.error('Error in auth state change:', error)
+      router.push('/auth')
+    }
 
     return () => subscription.unsubscribe()
   }, [router])

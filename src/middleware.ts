@@ -41,7 +41,14 @@ export async function middleware(req: NextRequest) {
     if (!supabase) {
       throw new Error('Failed to initialize Supabase client')
     }
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { session }, error } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error('Failed to get session:', error)
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/auth'
+      return NextResponse.redirect(redirectUrl)
+    }
 
     const pathname = req.nextUrl.pathname
 

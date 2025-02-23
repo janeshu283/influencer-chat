@@ -28,13 +28,7 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         // 統計データの取得
-        const [
-          { count: usersCount },
-          { count: influencersCount },
-          { count: chatsCount },
-          { count: messagesCount },
-          { data: tipsData },
-        ] = await Promise.all([
+        const results = await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase
             .from('profiles')
@@ -43,6 +37,23 @@ export default function AdminDashboard() {
           supabase.from('chat_rooms').select('*', { count: 'exact', head: true }),
           supabase.from('messages').select('*', { count: 'exact', head: true }),
           supabase.from('tips').select('amount'),
+        ])
+
+        // エラーチェック
+        for (const result of results) {
+          if (result.error) {
+            console.error('Error fetching data:', result.error)
+            throw result.error
+          }
+        }
+
+        const [
+          { count: usersCount },
+          { count: influencersCount },
+          { count: chatsCount },
+          { count: messagesCount },
+          { data: tipsData },
+        ] = results
         ])
 
         const totalTipsAmount = (tipsData || []).reduce(
