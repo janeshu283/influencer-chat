@@ -5,12 +5,20 @@ import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Session, User } from '@supabase/supabase-js'
 
+type UserProfile = {
+  nickname: string
+  userId: string
+  instagram: string
+  twitter?: string
+  tiktok?: string
+}
+
 type AuthContextType = {
   session: Session | null
   user: User | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, profile?: UserProfile) => Promise<void>
   signOut: () => Promise<void>
 }
 
