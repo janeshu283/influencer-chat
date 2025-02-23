@@ -24,14 +24,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // 初期セッションの取得
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Failed to get session:', error)
+        setLoading(false)
+        return
+      }
       setSession(session)
       setUser(session?.user ?? null)
+      setLoading(false)
+    }).catch(error => {
+      console.error('Failed to get session:', error)
       setLoading(false)
     })
 
     // セッション変更のリスナー
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription }, error } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', _event, session)
       setSession(session)
       setUser(session?.user ?? null)
