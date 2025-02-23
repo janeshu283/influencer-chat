@@ -11,6 +11,7 @@ type UserProfile = {
   instagram: string
   twitter?: string
   tiktok?: string
+  profileImage?: File | null
 }
 
 type AuthContextType = {
