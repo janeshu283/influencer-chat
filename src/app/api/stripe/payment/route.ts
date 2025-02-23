@@ -29,9 +29,16 @@ const initializeSupabase = () => {
 const stripe = initializeStripe()
 const supabase = initializeSupabase()
 
+if (!stripe || !supabase) {
+  throw new Error('Failed to initialize required services')
+}
+
 
 
 export async function POST(req: Request) {
+  const stripe = initializeStripe()
+  const supabase = initializeSupabase()
+
   // CORSヘッダーを設定
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -45,10 +52,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    if (!stripe) {
-      console.error('Stripe instance is not initialized')
+    if (!stripe || !supabase) {
+      console.error('Required services are not initialized')
       return new NextResponse(
-        JSON.stringify({ error: 'Payment service configuration error' }),
+        JSON.stringify({ error: 'Service configuration error' }),
         { 
           status: 500,
           headers: { 'Content-Type': 'application/json', ...headers }
