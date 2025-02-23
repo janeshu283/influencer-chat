@@ -197,7 +197,7 @@ export default function ChatPage() {
               className="w-full flex items-center space-x-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-pink-200 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="flex-shrink-0 w-12 h-12 relative rounded-full overflow-hidden bg-gray-100">
-                {profile.is_influencer ? (
+                {profile?.is_influencer ? (
                   room.user.profile_image_url && (
                     <img
                       src={room.user.profile_image_url}
@@ -217,7 +217,7 @@ export default function ChatPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {profile.is_influencer
+                  {profile?.is_influencer
                     ? (room.user.nickname || '一般ユーザー')
                     : (room.influencer.nickname || 'インフルエンサー')
                   }

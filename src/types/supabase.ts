@@ -10,6 +10,41 @@ export interface Profile {
   role?: 'user' | 'influencer' | 'admin'
   nickname?: string
   bio?: string
+  is_influencer?: boolean
+  is_admin?: boolean
+  is_active?: boolean
+  profile_image_url?: string
+}
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile
+      }
+      chat_rooms: {
+        Row: ChatRoom
+      }
+      messages: {
+        Row: Message
+      }
+    }
+  }
+}
+
+export interface OnlineStatus {
+  user_id: string
+  online_at: string
+  status: 'online' | 'offline'
+}
+
+export interface Tip {
+  id: string
+  created_at: string
+  amount: number
+  from_user_id: string
+  to_user_id: string
+  message?: string
 }
 
 export interface ChatRoom {
