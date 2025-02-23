@@ -50,7 +50,7 @@ export default function InfluencersPage() {
 
   const startChat = async (influencerId: string) => {
     try {
-      const { data: user } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth')
         return
@@ -58,13 +58,13 @@ export default function InfluencersPage() {
 
       // チャットルームが既に存在するか確認
       console.log('Starting chat with influencer:', influencerId)
-      console.log('Current user:', user.user.id)
+      console.log('Current user:', user.id)
 
       const { data: existingRoom, error: fetchError } = await supabase
         .from('chat_rooms')
         .select('id')
         .eq('influencer_id', influencerId)
-        .eq('user_id', user.user.id)
+        .eq('user_id', user.id)
         .maybeSingle()
 
       if (fetchError) {
@@ -88,7 +88,7 @@ export default function InfluencersPage() {
           .insert([
             {
               influencer_id: influencerId,
-              user_id: user.user.id,
+              user_id: user.id,
               last_message: '',
               last_message_time: new Date().toISOString(),
             },

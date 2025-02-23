@@ -50,10 +50,15 @@ export interface Tip {
 export interface ChatRoom {
   id: string
   created_at: string
+  user_id: string
   influencer_id: string
-  name: string
+  name?: string
   description?: string
-  is_active: boolean
+  is_active?: boolean
+  last_message?: string
+  last_message_time?: string
+  user?: Profile
+  influencer?: Profile
 }
 
 export interface Message {
