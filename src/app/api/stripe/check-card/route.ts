@@ -19,8 +19,9 @@ export async function GET(req: Request) {
   };
 
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    // URLをサーバーサイドで構築
+    const url = new URL(req.url, `https://${req.headers.get('host')}`);
+    const userId = url.searchParams.get('userId');
 
     if (!userId) {
       return new NextResponse(
