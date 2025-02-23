@@ -9,7 +9,7 @@ const initializeStripe = () => {
     return null
   }
   return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-01-27.acacia',
+    apiVersion: '2023-10-16',
   })
 }
 
@@ -114,8 +114,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/chat`,
+      success_url: `${req.headers.get('origin')}/chat?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get('origin')}/chat`,
       metadata: {
         influencerId,
         userId,
