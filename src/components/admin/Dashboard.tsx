@@ -54,7 +54,6 @@ export default function AdminDashboard() {
           { count: messagesCount },
           { data: tipsData },
         ] = results
-        ])
 
         const totalTipsAmount = (tipsData || []).reduce(
           (sum, tip) => sum + (tip.amount || 0),
