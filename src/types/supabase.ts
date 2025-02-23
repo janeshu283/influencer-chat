@@ -36,8 +36,8 @@ export interface Database {
 
 export interface OnlineStatus {
   user_id: string
-  online_at: string
-  status: 'online' | 'offline'
+  is_online: boolean
+  last_seen: string
 }
 
 export interface Tip {

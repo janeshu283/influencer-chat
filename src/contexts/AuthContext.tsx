@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     // セッション変更のリスナー
-    const { data: { subscription }, error } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', _event, session)
       setSession(session)
       setUser(session?.user ?? null)

@@ -62,9 +62,13 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
             .single()
 
           if (senderData) {
-            const newMessage = {
-              ...payload.new,
-              sender: senderData,
+            const newMessage: Message & { sender: Profile } = {
+              id: payload.new.id,
+              created_at: payload.new.created_at,
+              chat_room_id: payload.new.room_id,
+              user_id: payload.new.sender_id,
+              content: payload.new.content,
+              sender: senderData
             }
             setMessages((current) => [...current, newMessage])
           }
@@ -82,8 +86,8 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
     if (!newMessage.trim()) return
 
     const message = {
-      room_id: roomId,
-      sender_id: currentUserId,
+      chat_room_id: roomId,
+      user_id: currentUserId,
       content: newMessage.trim(),
     }
 
@@ -133,10 +137,10 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                   </div>
                 </div>
               )}
-              <div className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex ${message.user_id === currentUserId ? 'justify-end' : 'justify-start'}`}>
                 <div className="flex flex-col max-w-xs lg:max-w-md">
                   <div
-                    className={`px-4 py-2 rounded-lg ${message.sender_id === currentUserId
+                    className={`px-4 py-2 rounded-lg ${message.user_id === currentUserId
                       ? 'bg-pink-600 text-white ml-auto'
                       : 'bg-white text-gray-900 border border-gray-200 mr-auto'
                     } shadow-sm`}
@@ -146,7 +150,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                     </div>
                     <div>{message.content}</div>
                   </div>
-                  <div className={`text-xs mt-1 ${message.sender_id === currentUserId ? 'text-right' : 'text-left'} text-gray-500`}>
+                  <div className={`text-xs mt-1 ${message.user_id === currentUserId ? 'text-right' : 'text-left'} text-gray-500`}>
                     {formattedTime}
                   </div>
                 </div>

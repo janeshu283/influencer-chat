@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { FaInstagram, FaTwitter, FaTiktok, FaArrowLeft } from 'react-icons/fa'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 
 interface SignupData {
@@ -36,6 +37,7 @@ export default function SignupStepper() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [error, setError] = useState<string>('')
   const { signUp } = useAuth()
+  const router = useRouter()
   // Using the imported supabase instance
 
   const validateStep = async () => {

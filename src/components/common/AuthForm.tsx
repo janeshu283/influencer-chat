@@ -62,10 +62,7 @@ export default function AuthForm({ mode = 'signup' }: AuthFormProps) {
         }
       }
 
-      if (data?.user) {
-        console.log('Sign in successful, redirecting...')
-        router.push('/chat')
-      }
+
     } catch (error: any) {
       console.error('Unexpected error:', error)
       setError('An unexpected error occurred')

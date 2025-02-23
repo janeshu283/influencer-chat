@@ -41,23 +41,19 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
         }),
       })
 
-      let errorData
       const contentType = response.headers.get('content-type')
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json()
         if (!response.ok) {
-          errorData = data
           throw new Error(data.error || 'エラーが発生しました')
         }
-        return data
+        // Stripeのチェックアウトページにリダイレクト
+        window.location.href = data.url
       } else {
         const text = await response.text()
         console.error('Unexpected response:', text)
         throw new Error('サーバーからの応答が不正です')
       }
-
-      // Stripeのチェックアウトページにリダイレクト
-      window.location.href = data.url
     } catch (error) {
       console.error('SuperChat error:', error)
       alert('スーパーチャットの処理中にエラーが発生しました')
