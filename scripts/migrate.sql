@@ -1,0 +1,9 @@
+-- Add social media columns
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS instagram TEXT,
+ADD COLUMN IF NOT EXISTS twitter TEXT,
+ADD COLUMN IF NOT EXISTS tiktok TEXT,
+ADD COLUMN IF NOT EXISTS introduction TEXT,
+ADD COLUMN IF NOT EXISTS profile_image_url TEXT,
+ADD COLUMN IF NOT EXISTS nickname TEXT,
+ADD COLUMN IF NOT EXISTS is_influencer BOOLEAN DEFAULT false;
