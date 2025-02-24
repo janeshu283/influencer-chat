@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
 interface PaymentRequestBody {
@@ -14,8 +14,7 @@ export async function POST(request: Request) {
     const json = await request.json() as PaymentRequestBody;
     const { amount, influencerId, roomId } = json;
 
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createServerClient();
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
