@@ -12,7 +12,7 @@ interface ChatRoomHeader {
   profile: Profile;
   roomId: string;
   currentUserId: string;
-  onSendSuperChat: (amount: number, message: string) => Promise<void>;
+  onSendSuperChat: (amount: number) => Promise<void>;
 }
 
 function ChatRoomHeader({ profile, roomId, currentUserId, onSendSuperChat }: ChatRoomHeader) {
@@ -199,9 +199,8 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           currentUserId={currentUserId}
           onSendSuperChat={async (amount, message) => {
             try {
-              // 必要なパラメーターをチェック
-              if (!amount || !currentUserId || !influencer?.id || !roomId) {
-                throw new Error('Required fields are missing');
+              if (!amount || !currentUserId || !influencer?.id) {
+                throw new Error('必要な情報が不足しています');
               }
 
               const response = await fetch('/api/stripe/payment', {
@@ -211,29 +210,21 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                 },
                 body: JSON.stringify({
                   amount,
-                  message: message || '',
                   userId: currentUserId,
                   influencerId: influencer.id,
-                  roomId: roomId,
+                  roomId
                 }),
               });
 
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error sending superchat:', errorText);
-                throw new Error(errorText);
-              }
-
               const data = await response.json();
-              if (!data.url) {
-                throw new Error('Payment URL is missing');
+              if (data.url) {
+                window.location.href = data.url;
+              } else {
+                throw new Error('支払いURLの取得に失敗しました');
               }
-
-              window.location.href = data.url;
             } catch (error) {
-              console.error('Error in super chat process:', error);
-              alert('スーパーチャットの処理中にエラーが発生しました。もう一度お試しください。');
-              throw error;
+              console.error('投げ銭処理エラー:', error);
+              alert('投げ銭の処理中にエラーが発生しました');
             }
           }}
         />
