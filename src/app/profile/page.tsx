@@ -263,29 +263,30 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Loading...</div>
-      </div>
-    )
-  }
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      )
+    }
 
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">プロフィールが見つかりません</div>
-      </div>
-    )
-  }
+    if (!profile) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-gray-600">プロフィールが見つかりません</div>
+        </div>
+      )
+    }
 
-  return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      <div className="bg-white rounded-lg overflow-hidden p-6 space-y-8">
-        <h2 className="text-2xl font-bold text-gray-900">プロフィール</h2>
-        
-        <div className="flex flex-col items-center">
-          <div
+    return (
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg overflow-hidden p-6 space-y-8">
+          <h2 className="text-2xl font-bold text-gray-900">プロフィール</h2>
+          
+          <div className="flex flex-col items-center">
+            <div
             className="w-32 h-32 relative rounded-full overflow-hidden bg-gray-100 mb-4 group cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -440,4 +441,15 @@ export default function ProfilePage() {
       </div>
     </div>
   )
+}
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">ログインが必要です</div>
+      </div>
+    )
+  }
+
+  return renderContent()
 }
