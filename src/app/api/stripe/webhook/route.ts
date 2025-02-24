@@ -9,11 +9,16 @@ export async function POST(req: Request) {
 
   let event: any
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+  }
+
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     )
   } catch (err) {
     return NextResponse.json({ error: 'Webhook error' }, { status: 400 })
