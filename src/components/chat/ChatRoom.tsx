@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import type { Message, Profile } from '@/types/supabase'
-import SuperChatDialog from './SuperChatDialog'
+import SuperChat from './SuperChat'
 
 interface ChatRoomProps {
   roomId: string
@@ -45,27 +45,11 @@ function ChatRoomHeader({ profile, onSendSuperChat }: ChatRoomHeader) {
             </div>
           </div>
           {profile && profile.id && (
-            <>
-              <button
-                onClick={() => setIsDialogOpen(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-pink-600 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
-              >
-                スーパーチャットを送る
-              </button>
-              <SuperChatDialog
-                isOpen={isDialogOpen}
-                onClose={() => setIsDialogOpen(false)}
-                onSubmit={async (amount) => {
-                  setIsLoading(true);
-                  try {
-                    await onSendSuperChat(amount);
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                isLoading={isLoading}
-              />
-            </>
+            <SuperChat
+              influencerId={profile.id}
+              influencerName={profile.username || 'Anonymous'}
+              roomId={roomId}
+            />
           )}
         </div>
       </div>

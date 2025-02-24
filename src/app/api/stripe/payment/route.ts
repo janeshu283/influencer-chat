@@ -14,23 +14,25 @@ export async function POST(request: Request) {
     const json = await request.json() as PaymentRequestBody;
     const { amount, influencerId, roomId } = json;
 
-    const supabase = createServerClient();
-
-    // セッショントークンを取得
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session) {
-      console.error('Authentication error:', sessionError);
+    // リクエストヘッダーからトークンを取得
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'ユーザー認証が必要です' },
         { status: 401 }
       );
     }
 
-    const user = session.user;
-    if (!user) {
+    const token = authHeader.split(' ')[1];
+    const supabase = createServerClient();
+
+    // トークンを使用してユーザー情報を取得
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
       return NextResponse.json(
-        { error: 'ユーザー情報が見つかりません' },
+        { error: 'ユーザー認証が必要です' },
         { status: 401 }
       );
     }

@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'  // Supabaseクライアントのインポート
 
 interface SuperChatProps {
   influencerId: string
   influencerName: string
+  roomId: string
 }
 
-export default function SuperChat({ influencerId, influencerName }: SuperChatProps) {
+export default function SuperChat({ influencerId, influencerName, roomId }: SuperChatProps) {
   const [amount, setAmount] = useState<number>(500)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,7 +18,6 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
   const { user } = useAuth()
   const router = useRouter()
 
-  // カード情報の有無をチェック
   useEffect(() => {
     const checkCard = async () => {
       if (!user) return
@@ -54,12 +55,14 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
       const requestData = {
         amount,
         influencerId,
-        message,
-        userId: user.id,
+        roomId,
       }
       console.log('Sending superchat request:', requestData)
 
-      console.log('Request URL:', `${window.location.origin}/api/stripe/payment`)
+      // Supabaseのアクセストークンを取得（実装に合わせて調整）
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
       const url = `${window.location.origin}/api/stripe/payment`
       console.log('Making request to:', url)
       const response = await fetch(url, {
@@ -67,28 +70,17 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // アクセストークンをヘッダーに追加（サーバー側がこのトークンを検証できる場合）
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          amount,
-          influencerId,
-          message,
-          userId: user.id,
-        }),
+        body: JSON.stringify(requestData),
       })
 
       console.log('Response status:', response.status)
-      // レスポンスの詳細をログ出力
-      console.log('Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      })
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
       const contentType = response.headers.get('content-type')
       console.log('Content-Type:', contentType)
-
-      // レスポンスの内容をクローンして両方のケースで読めるようにする
-      const responseClone = response.clone()
 
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json()
@@ -113,12 +105,10 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
           throw new Error('StripeのチェックアウトURLが見つかりません')
         }
 
-        // Stripeのチェックアウトページにリダイレクト
         window.location.href = data.url
       } else {
-        // JSONでない場合は生のテキストを試す
         try {
-          const text = await responseClone.text()
+          const text = await response.clone().text()
           console.error('Non-JSON response details:', {
             status: response.status,
             statusText: response.statusText,
@@ -188,9 +178,10 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
                     key={value}
                     type="button"
                     onClick={() => setAmount(value)}
-                    className={`px-4 py-3 rounded-lg border-2 transition-all ${amount === value
-                      ? 'border-pink-500 bg-pink-50 text-pink-700'
-                      : 'border-gray-200 hover:border-pink-200 hover:bg-pink-50 text-gray-900'
+                    className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                      amount === value
+                        ? 'border-pink-500 bg-pink-50 text-pink-700'
+                        : 'border-gray-200 hover:border-pink-200 hover:bg-pink-50 text-gray-900'
                     }`}
                   >
                     ¥{value.toLocaleString()}
