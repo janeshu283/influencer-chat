@@ -15,10 +15,34 @@ export default function SuperChatButton({ onSendSuperChat }: SuperChatButtonProp
 
   const amounts = [100, 500, 1000, 5000, 10000]; // 選択可能な金額
 
-  const handleSend = () => {
-    onSendSuperChat(amount, message);
-    setIsModalOpen(false);
-    setMessage('');
+  const handleSend = async () => {
+    try {
+      // ここで決済処理を行う
+      const response = await fetch('/api/stripe/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          message,
+          userId: user?.id,
+          influencerId: user?.id, // TODO: 正しいinfluencerIdを設定
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Payment failed');
+      }
+
+      // 決済成功後にメッセージを保存
+      onSendSuperChat(amount, message);
+      setIsModalOpen(false);
+      setMessage('');
+    } catch (error) {
+      console.error('Error sending superchat:', error);
+      alert('スーパーチャットの送信に失敗しました。');
+    }
   };
 
   return (

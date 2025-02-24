@@ -91,6 +91,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
 
     // メッセージの初期読み込み
     const loadMessages = async () => {
+      console.log('Loading messages for room:', roomId)
       const { data, error } = await supabase
         .from('messages')
         .select('*, type, amount, sender:profiles(*)')
@@ -102,6 +103,11 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
         return
       }
 
+      console.log('Loaded messages:', data)
+      if (data) {
+        console.log('Messages with type superchat:', data.filter(m => m.type === 'superchat'))
+        console.log('Sample message structure:', data[0])
+      }
       setMessages(data || [])
       setLoading(false)
     }
@@ -138,6 +144,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               amount: payload.new.amount,
               sender: senderData
             }
+            console.log('New message received:', newMessage)
             setMessages((current) => [...current, newMessage])
           }
         }
@@ -185,26 +192,27 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           roomId={roomId} 
           currentUserId={currentUserId}
           onSendSuperChat={async (amount, message) => {
-            const { data, error } = await supabase
-              .from('messages')
-              .insert([
-                {
-                  chat_room_id: roomId,
-                  user_id: currentUserId,
-                  content: message,
-                  type: 'superchat',
-                  amount: amount
-                }
-              ])
-              .select('*, sender:profiles(*)')
-              .single()
+            const response = await fetch('/api/stripe/payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                amount,
+                message,
+                userId: currentUserId,
+                influencerId: influencer.id,
+                roomId: roomId,
+              }),
+            });
 
-            if (error) {
-              console.error('Error sending superchat:', error)
-              return
+            if (!response.ok) {
+              console.error('Error sending superchat:', await response.text());
+              return;
             }
 
-            setMessages(prev => [...prev, data])
+            const data = await response.json();
+            window.location.href = data.url;
           }}
         />
       </div>

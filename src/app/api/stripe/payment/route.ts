@@ -104,9 +104,9 @@ export async function POST(req: Request) {
 
     const body = await req.json()
     console.log('Request body:', body)
-    const { amount, influencerId, message, userId } = body
+    const { amount, influencerId, message, userId, roomId } = body
 
-    if (!amount || !influencerId || !userId) {
+    if (!amount || !influencerId || !userId || !roomId) {
       return new NextResponse(
         JSON.stringify({ error: 'Required fields are missing' }),
         { 
@@ -191,6 +191,7 @@ export async function POST(req: Request) {
       metadata: {
         influencerId,
         userId,
+        roomId,
         message: message || '',
       },
     }
