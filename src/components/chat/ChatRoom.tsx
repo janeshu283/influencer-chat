@@ -42,7 +42,7 @@ function ChatRoomHeader({ profile, roomId, currentUserId, onSendSuperChat }: Cha
               </div>
             </div>
           </div>
-          {influencer && influencer.id && (
+          {profile && profile.id && (
             <SuperChatButton 
               onSendSuperChat={onSendSuperChat}
               roomId={roomId}
@@ -213,7 +213,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                   amount,
                   message: message || '',
                   userId: currentUserId,
-                  influencerId: influencer.id,
+                  influencerId: profile.id,
                   roomId: roomId,
                 }),
               });
