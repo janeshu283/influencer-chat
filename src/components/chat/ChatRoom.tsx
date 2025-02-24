@@ -12,9 +12,10 @@ interface ChatRoomHeader {
   profile: Profile;
   roomId: string;
   currentUserId: string;
+  onSendSuperChat: (amount: number, message: string) => Promise<void>;
 }
 
-function ChatRoomHeader({ profile, roomId, currentUserId }: ChatRoomHeader) {
+function ChatRoomHeader({ profile, onSendSuperChat }: ChatRoomHeader) {
   return (
     <div className="bg-white border-b shadow-sm">
       <div className="max-w-3xl mx-auto">
@@ -41,28 +42,7 @@ function ChatRoomHeader({ profile, roomId, currentUserId }: ChatRoomHeader) {
               </div>
             </div>
           </div>
-          <SuperChatButton onSendSuperChat={async (amount, message) => {
-            const { data, error } = await supabase
-              .from('messages')
-              .insert([
-                {
-                  chat_room_id: roomId,
-                  user_id: currentUserId,
-                  content: message,
-                  type: 'superchat',
-                  amount: amount
-                }
-              ])
-              .select('*, sender:profiles(*)')
-              .single()
-
-            if (error) {
-              console.error('Error sending superchat:', error)
-              return
-            }
-
-            setMessages(prev => [...prev, data])
-          }} />
+          <SuperChatButton onSendSuperChat={onSendSuperChat} />
         </div>
       </div>
     </div>
@@ -200,7 +180,33 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="sticky top-0 z-10">
-        <ChatRoomHeader profile={influencer} roomId={roomId} currentUserId={currentUserId} />
+        <ChatRoomHeader 
+          profile={influencer} 
+          roomId={roomId} 
+          currentUserId={currentUserId}
+          onSendSuperChat={async (amount, message) => {
+            const { data, error } = await supabase
+              .from('messages')
+              .insert([
+                {
+                  chat_room_id: roomId,
+                  user_id: currentUserId,
+                  content: message,
+                  type: 'superchat',
+                  amount: amount
+                }
+              ])
+              .select('*, sender:profiles(*)')
+              .single()
+
+            if (error) {
+              console.error('Error sending superchat:', error)
+              return
+            }
+
+            setMessages(prev => [...prev, data])
+          }}
+        />
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
         <div className="max-w-3xl mx-auto">
