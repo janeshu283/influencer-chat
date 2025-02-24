@@ -86,67 +86,81 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      <div className="bg-white rounded-lg overflow-hidden p-6 space-y-8">
-        <h2 className="text-2xl font-bold text-gray-900">プロフィール</h2>
-        
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">ニックネーム</label>
-            <input
-              type="text"
-              value={profile.nickname}
-              onChange={(e) => updateProfile('nickname', e.target.value)}
-              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
-            />
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="px-4 py-5 sm:p-6 space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">プロフィール</h2>
+              <p className="mt-1 text-sm text-gray-500">あなたのプロフィール情報を編集できます。</p>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="nickname" className="block text-sm font-medium text-gray-700">ニックネーム</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    id="nickname"
+                    value={profile.nickname}
+                    onChange={(e) => updateProfile('nickname', e.target.value)}
+                    className="shadow-sm focus:ring-pink-500 focus:border-pink-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">自己紹介</label>
-            <textarea
-              rows={4}
-              value={profile.bio || ''}
-              onChange={(e) => updateProfile('bio', e.target.value)}
-              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
-            />
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">SNSアカウント連携</h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <FaXTwitter className="text-xl text-gray-900 mr-3" />
-              <input
-                type="text"
-                value={profile.x || ''}
-                onChange={(e) => updateProfile('x', e.target.value)}
-                placeholder="X ID または URL"
-                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
-              />
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium text-gray-700">自己紹介</label>
+                <div className="mt-1">
+                  <textarea
+                    id="bio"
+                    rows={4}
+                    value={profile.bio || ''}
+                    onChange={(e) => updateProfile('bio', e.target.value)}
+                    className="shadow-sm focus:ring-pink-500 focus:border-pink-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center">
-              <FaInstagram className="text-xl text-[#E4405F] mr-3" />
-              <input
-                type="text"
-                value={profile.instagram || ''}
-                onChange={(e) => updateProfile('instagram', e.target.value)}
-                placeholder="Instagram ID または URL"
-                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
-              />
-            </div>
+            <div className="pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">SNSアカウント連携</h3>
+              <p className="mt-1 text-sm text-gray-500">あなたのSNSアカウントを連携して、フォロワーに共有できます。</p>
+              
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center">
+                  <FaXTwitter className="text-xl text-gray-900 mr-3" />
+                  <input
+                    type="text"
+                    value={profile.x || ''}
+                    onChange={(e) => updateProfile('x', e.target.value)}
+                    placeholder="X ID または URL"
+                    className="shadow-sm focus:ring-pink-500 focus:border-pink-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
 
-            <div className="flex items-center">
-              <FaTiktok className="text-xl text-black mr-3" />
-              <input
-                type="text"
-                value={profile.tiktok || ''}
-                onChange={(e) => updateProfile('tiktok', e.target.value)}
-                placeholder="TikTok ID または URL"
-                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
-              />
+                <div className="flex items-center">
+                  <FaInstagram className="text-xl text-[#E4405F] mr-3" />
+                  <input
+                    type="text"
+                    value={profile.instagram || ''}
+                    onChange={(e) => updateProfile('instagram', e.target.value)}
+                    placeholder="Instagram ID または URL"
+                    className="shadow-sm focus:ring-pink-500 focus:border-pink-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <FaTiktok className="text-xl text-black mr-3" />
+                  <input
+                    type="text"
+                    value={profile.tiktok || ''}
+                    onChange={(e) => updateProfile('tiktok', e.target.value)}
+                    placeholder="TikTok ID または URL"
+                    className="shadow-sm focus:ring-pink-500 focus:border-pink-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
