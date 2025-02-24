@@ -77,6 +77,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
   const [messages, setMessages] = useState<(Message & { sender: Profile })[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [influencer, setInfluencer] = useState<Profile | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   // Using the imported supabase instance
@@ -212,83 +213,23 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           roomId={roomId} 
           currentUserId={currentUserId}
           onSendSuperChat={async (amount: number) => {
-            if (!amount || !influencer?.id || !roomId || !currentUserId) {
-              throw new Error('必要な情報が不足しています');
-            }
+            if (isProcessing) return;
+            setIsProcessing(true);
 
-            // カード登録状態を確認
-            const cardCheckResponse = await fetch('/api/stripe/check-card', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            });
-
-            const cardData = await cardCheckResponse.json();
-            if (!cardData.hasCard) {
-              window.location.href = '/settings/payment';
-              return;
-            }
-
-            // 支払い処理
-            const response = await fetch('/api/stripe/payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                amount,
-                influencerId: influencer.id,
-                roomId
-              }),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-              if (data.redirect) {
-                window.location.href = data.redirect;
-                return;
-              }
-              throw new Error(data.error || 'スーパーチャットの処理中にエラーが発生しました');
-            }
-
-            // スーパーチャットメッセージを保存
-            const { error: messageError } = await supabase.from('messages').insert([
-              {
-                chat_room_id: roomId,
-                user_id: currentUserId,
-                content: `スーパーチャット: ${amount}円`,
-                type: 'superchat',
-                amount: amount,
-                payment_intent_id: data.paymentIntent.id
-              }
-            ]);
-
-            if (messageError) {
-              console.error('Failed to save message:', messageError);
-              // 支払いは成功しているので、メッセージの保存エラーはログに記録するだけ
-            }
-
-
-
-
-            
             try {
-              setIsLoading(true);
-              
+              if (!amount || !influencer?.id || !roomId || !currentUserId) {
+                throw new Error('必要な情報が不足しています');
+              }
+
               // カード登録状態を確認
               const cardCheckResponse = await fetch('/api/stripe/check-card', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  userId: currentUserId,
-                }),
+                }
               });
 
               const cardData = await cardCheckResponse.json();
-              
               if (!cardData.hasCard) {
                 window.location.href = '/settings/payment';
                 return;
@@ -308,9 +249,12 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               });
 
               const data = await response.json();
-              console.log('Payment response:', data);
               if (!response.ok) {
-                throw new Error(data.error || '投げ銭の処理中にエラーが発生しました');
+                if (data.redirect) {
+                  window.location.href = data.redirect;
+                  return;
+                }
+                throw new Error(data.error || 'スーパーチャットの処理中にエラーが発生しました');
               }
 
               // スーパーチャットメッセージを保存
@@ -332,8 +276,10 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
 
               alert('スーパーチャットを送信しました！');
             } catch (error) {
-              console.error('投げ銭処理エラー:', error);
-              alert(error instanceof Error ? error.message : '投げ銭の処理中にエラーが発生しました');
+              console.error('スーパーチャットエラー:', error);
+              alert(error instanceof Error ? error.message : 'スーパーチャットの処理中にエラーが発生しました');
+            } finally {
+              setIsProcessing(false);
             }
           }}
         />
