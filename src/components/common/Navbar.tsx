@@ -57,7 +57,7 @@ export default function Navbar() {
           <div className="flex items-center">
             {user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">{user.email}</span>
+                <span className="text-sm text-gray-600">{user?.user_metadata?.nickname}</span>
                 <button
                   onClick={signOut}
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-pink-600 hover:bg-pink-100"

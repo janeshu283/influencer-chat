@@ -17,6 +17,8 @@ export default function ChatRoomList({
   const [rooms, setRooms] = useState<(ChatRoom & { influencer: Profile; user: Profile })[]>([])
   const [loading, setLoading] = useState(true)
   const [isInfluencer, setIsInfluencer] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+
   // Using the imported supabase instance
 
   useEffect(() => {
@@ -85,18 +87,32 @@ export default function ChatRoomList({
     return <div className="p-4">Loading...</div>
   }
 
+  const filteredRooms = rooms.filter(room => {
+    const partner = isInfluencer ? room.user : room.influencer
+    return partner.nickname?.toLowerCase().includes(searchTerm.toLowerCase())
+  })
+
   return (
     <div className="divide-y">
-      {rooms.length === 0 ? (
+      <div className="p-4 border-b">
+        <input
+          type="text"
+          placeholder="検索..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+        />
+      </div>
+      {filteredRooms.length === 0 ? (
         <div className="p-4 text-gray-500 text-center">
           トークがありません
         </div>
       ) : (
-        rooms.map((room) => (
+        filteredRooms.map((room) => (
           <button
             key={room.id}
             onClick={() => onSelectRoom(room.id)}
-            className={`w-full p-4 text-left hover:bg-pink-50 ${
+            className={`w-full p-2 text-left hover:bg-pink-50 ${
               selectedRoomId === room.id ? 'bg-pink-100' : ''
             }`}
           >

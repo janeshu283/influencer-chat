@@ -22,16 +22,22 @@ export async function middleware(req: NextRequest) {
             return req.cookies.get(name)?.value
           },
           set(name: string, value: string, options: any) {
-            req.cookies.set({
+            res.cookies.set({
               name,
               value,
               ...options,
+              path: '/',
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production'
             })
           },
           remove(name: string, options: any) {
-            req.cookies.delete({
+            res.cookies.delete({
               name,
               ...options,
+              path: '/',
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production'
             })
           },
         },
@@ -43,27 +49,36 @@ export async function middleware(req: NextRequest) {
     }
     const { data: { session }, error } = await supabase.auth.getSession()
 
+    const currentPath = req.nextUrl.pathname
+    console.log('[Middleware] Path:', currentPath, 'Session exists:', !!session)
+
+    // 除外パスチェック
+    const excludedPaths = ['/auth/callback', '/api/']
+    if (excludedPaths.some(path => currentPath.startsWith(path))) {
+      return res
+    }
+
+    // 未認証ユーザーが保護ルートにアクセス
+    if (!session && protectedRoutes.some(route => currentPath.startsWith(route))) {
+      console.log('Redirecting unauthenticated user to /auth')
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/auth'
+      redirectUrl.searchParams.set('redirect', currentPath)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 認証済みユーザーが認証ルートにアクセス
+    if (session && authRoutes.some(route => currentPath.startsWith(route))) {
+      console.log('Redirecting authenticated user to /chat')
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/chat'
+      return NextResponse.redirect(redirectUrl)
+    }
+
     if (error) {
       console.error('Failed to get session:', error)
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = '/auth'
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    const pathname = req.nextUrl.pathname
-
-    // 認証が必要なルートへのアクセスをチェック
-    if (!session && protectedRoutes.some(route => pathname.startsWith(route))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = '/auth'
-      redirectUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // 認証済みユーザーの認証ページへのアクセスをチェック
-    if (session && authRoutes.some(route => pathname.startsWith(route))) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = '/chat'
       return NextResponse.redirect(redirectUrl)
     }
 
@@ -84,12 +99,9 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip all internal paths (_next)
-    '/((?!_next).*)',
-    // Auth and protected routes
-    '/auth/:path*',
     '/chat/:path*',
     '/profile/:path*',
-    '/admin/:path*'
+    '/admin/:path*',
+    '/auth/:path*'
   ]
 }

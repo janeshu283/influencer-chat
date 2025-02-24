@@ -9,9 +9,13 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.getSession()
-      if (!error) {
-        router.push('/chat')
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      if (!error && session) {
+        const redirectPath = router.nextUrl.searchParams.get('redirect') || '/chat'
+        router.push(redirectPath)
+      } else {
+        router.push('/auth?error=authentication_failed')
       }
     }
 

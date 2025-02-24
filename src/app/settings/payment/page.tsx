@@ -34,7 +34,7 @@ stripePromise.then(
   (error) => console.error('Failed to initialize Stripe:', error)
 );
 
-function PaymentForm() {
+function PaymentSection() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -81,20 +81,20 @@ function PaymentForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold mb-4">クレジットカード情報</h2>
-      
-      <p className="text-gray-600 mb-4">
-        スーパーチャットを送信するためには、クレジットカードの登録が必要です。
-      </p>
-
-      <button
-        onClick={handleSetupCard}
-        disabled={loading}
-        className="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 disabled:bg-pink-300 transition-colors duration-200"
-      >
-        {loading ? '処理中...' : 'カード情報を設定する'}
-      </button>
+    <div className="mt-6">
+      <h3 className="text-lg font-medium">支払い方法</h3>
+      <div className="mt-4 p-4 bg-white rounded-lg shadow">
+        <p className="text-gray-600 mb-4">
+          スーパーチャットを送信するためには、クレジットカードの登録が必要です。
+        </p>
+        <button
+          onClick={handleSetupCard}
+          disabled={loading}
+          className="mt-4 bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 disabled:opacity-50"
+        >
+          {loading ? '処理中...' : '支払い方法を設定'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -104,7 +104,7 @@ export default function PaymentSettings() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">支払い設定</h1>
-      <PaymentForm />
+      <PaymentSection />
     </div>
   );
 }

@@ -28,6 +28,7 @@ export default function ChatPage() {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -168,6 +169,10 @@ export default function ChatPage() {
     }
   }, [user])
 
+  const filteredRooms = chatRooms.filter(room =>
+    room.user.nickname.includes(searchQuery) || room.influencer.nickname.includes(searchQuery)
+  )
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -182,15 +187,23 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 mt-16">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">トーク一覧</h1>
-      
-      <div className="space-y-4">
-        {chatRooms.length === 0 ? (
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-bold mb-2">トーク一覧</h2>
+        <input
+          type="text"
+          placeholder="名前で検索"
+          className="w-full px-3 py-2 border rounded-md text-sm"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+      <div className="overflow-y-auto h-[calc(100vh-160px)]">
+        {filteredRooms.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600">まだトークがありません</p>
           </div>
         ) : (
-          chatRooms.map((room) => (
+          filteredRooms.map((room) => (
             <button
               key={room.id}
               onClick={() => router.push(`/chat/${room.id}`)}

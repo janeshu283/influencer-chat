@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { FaInstagram, FaTwitter, FaTiktok } from 'react-icons/fa'
+import { FaInstagram, FaTiktok } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
 interface Influencer {
   id: string
   nickname: string
   instagram: string
-  twitter: string
+  x: string
   tiktok: string
   profile_image_url: string
   bio: string
@@ -29,7 +30,7 @@ export default function InfluencersPage() {
             id,
             nickname,
             instagram,
-            twitter,
+            x,
             tiktok,
             profile_image_url,
             bio
@@ -167,14 +168,14 @@ export default function InfluencersPage() {
                         <FaInstagram className="text-xl" />
                       </a>
                     )}
-                    {influencer.twitter && (
+                    {influencer.x && (
                       <a
-                        href={`https://twitter.com/${influencer.twitter}`}
+                        href={`https://x.com/${influencer.x}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-pink-500 hover:text-pink-600"
                       >
-                        <FaTwitter className="text-xl" />
+                        <FaXTwitter className="text-xl" />
                       </a>
                     )}
                     {influencer.tiktok && (

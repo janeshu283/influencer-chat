@@ -3,15 +3,18 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
-import { FaInstagram, FaTwitter, FaTiktok } from 'react-icons/fa'
+import { FaInstagram, FaTiktok } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 import { CameraIcon } from '@heroicons/react/24/outline'
+import { FaTimes } from 'react-icons/fa';
+import PaymentSection from '../settings/payment/page';
 
 interface Profile {
   nickname: string
   email: string
   bio: string
   instagram: string
-  twitter: string
+  x: string
   tiktok: string
   profile_image_url: string
   is_influencer: boolean
@@ -262,16 +265,16 @@ export default function ProfilePage() {
           
           <div className="space-y-4">
             <div className="flex items-center">
-              <FaTwitter className="text-xl text-[#1DA1F2] mr-3" />
+              <FaXTwitter className="text-xl text-gray-900 mr-3" />
               <input
                 type="text"
-                value={profile.twitter || ''}
-                onChange={(e) => updateProfile('twitter', e.target.value)}
-                placeholder="Twitter ID または URL"
+                value={profile.x || ''}
+                onChange={(e) => updateProfile('x', e.target.value)}
+                placeholder="X ID または URL"
                 className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
               />
               <span className="ml-3 text-sm text-gray-500">
-                {profile.twitter ? '連携済み' : '未連携'}
+                {profile.x ? '連携済み' : '未連携'}
               </span>
             </div>
 
@@ -304,10 +307,12 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        <PaymentSection />
       </div>
 
       <div className="text-center text-sm text-gray-500 mt-8">
-        Copyright © 2025 GifTalk
+        Copyright 2025 GifTalk
       </div>
     </div>
   )

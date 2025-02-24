@@ -9,7 +9,7 @@ type UserProfile = {
   nickname: string
   userId: string
   instagram: string
-  twitter?: string
+  x?: string
   tiktok?: string
   profileImage?: File | null
 }
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: email,
             nickname: profile.nickname,
             instagram: profile.instagram,
-            twitter: profile.twitter,
+            x: profile.x,
             tiktok: profile.tiktok,
             is_influencer: profile.isInfluencer || false,
           })
