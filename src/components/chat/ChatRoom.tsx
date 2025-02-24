@@ -198,6 +198,21 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
             }
             
             try {
+              // メッセージを保存
+              const { error: messageError } = await supabase.from('messages').insert([
+                {
+                  chat_room_id: roomId,
+                  user_id: currentUserId,
+                  content: `スーパーチャット: ${amount}円`,
+                  type: 'superchat',
+                  amount: amount
+                }
+              ]);
+
+              if (messageError) {
+                throw new Error('メッセージの保存に失敗しました');
+              }
+
               const response = await fetch('/api/stripe/payment', {
                 method: 'POST',
                 headers: {
