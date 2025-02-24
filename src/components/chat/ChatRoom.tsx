@@ -196,11 +196,9 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           roomId={roomId} 
           currentUserId={currentUserId}
           onSendSuperChat={async (amount) => {
+            if (!amount) return;
+            
             try {
-              if (!amount || !currentUserId || !influencer?.id) {
-                throw new Error('必要な情報が不足しています');
-              }
-
               const response = await fetch('/api/stripe/payment', {
                 method: 'POST',
                 headers: {
@@ -209,20 +207,22 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                 body: JSON.stringify({
                   amount,
                   userId: currentUserId,
-                  influencerId: influencer.id,
+                  influencerId: influencer?.id,
                   roomId
                 }),
               });
 
               const data = await response.json();
+              if (!response.ok) {
+                throw new Error(data.error || '投げ銭の処理中にエラーが発生しました');
+              }
+              
               if (data.url) {
                 window.location.href = data.url;
-              } else {
-                throw new Error('支払いURLの取得に失敗しました');
               }
             } catch (error) {
               console.error('投げ銭処理エラー:', error);
-              alert('投げ銭の処理中にエラーが発生しました');
+              alert(error instanceof Error ? error.message : '投げ銭の処理中にエラーが発生しました');
             }
           }}
         />
