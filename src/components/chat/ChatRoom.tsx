@@ -198,21 +198,25 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
             }
             
             try {
-              // メッセージを保存
-              const { error: messageError } = await supabase.from('messages').insert([
-                {
-                  chat_room_id: roomId,
-                  user_id: currentUserId,
-                  content: `スーパーチャット: ${amount}円`,
-                  type: 'superchat',
-                  amount: amount
-                }
-              ]);
+              // カード登録状態を確認
+              const cardCheckResponse = await fetch('/api/stripe/check-card', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: currentUserId,
+                }),
+              });
 
-              if (messageError) {
-                throw new Error('メッセージの保存に失敗しました');
+              const cardData = await cardCheckResponse.json();
+              if (!cardData.hasCard) {
+                // カードが登録されていない場合、カード登録ページにリダイレクト
+                window.location.href = '/settings/payment';
+                return;
               }
 
+              // 支払い処理
               const response = await fetch('/api/stripe/payment', {
                 method: 'POST',
                 headers: {
@@ -230,10 +234,24 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               if (!response.ok) {
                 throw new Error(data.error || '投げ銭の処理中にエラーが発生しました');
               }
-              
-              if (data.url) {
-                window.location.href = data.url;
+
+              // 支払いが成功した場合のみメッセージを保存
+              const { error: messageError } = await supabase.from('messages').insert([
+                {
+                  chat_room_id: roomId,
+                  user_id: currentUserId,
+                  content: `スーパーチャット: ${amount}円`,
+                  type: 'superchat',
+                  amount: amount
+                }
+              ]);
+
+              if (messageError) {
+                throw new Error('メッセージの保存に失敗しました');
               }
+
+              // 成功メッセージを表示
+              alert('スーパーチャットを送信しました！');
             } catch (error) {
               console.error('投げ銭処理エラー:', error);
               alert(error instanceof Error ? error.message : '投げ銭の処理中にエラーが発生しました');

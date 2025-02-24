@@ -31,49 +31,59 @@ export async function POST(req: Request) {
       )
     }
 
-    const { data: influencer, error: influencerError } = await supabase
+    // ユーザー情報を取得
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('id', influencerId)
+      .select('stripe_customer_id')
+      .eq('id', userId)
       .single()
 
-    if (influencerError || !influencer) {
+    if (profileError || !profile?.stripe_customer_id) {
       return NextResponse.json(
-        { error: 'インフルエンサーが見つかりません' },
-        { status: 404 }
+        { error: 'カード情報が見つかりません' },
+        { status: 400 }
       )
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'jpy',
-            product_data: {
-              name: `${influencer.nickname || 'インフルエンサー'}さんへの投げ銭`,
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/chat/${roomId}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/chat/${roomId}`,
-      metadata: {
-        influencerId,
-        userId,
-        roomId,
-      },
+    // 支払い方法を取得
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: profile.stripe_customer_id,
+      type: 'card',
     })
 
-    return NextResponse.json({ url: session.url })
+    if (paymentMethods.data.length === 0) {
+      return NextResponse.json(
+        { error: 'クレジットカードが登録されていません' },
+        { status: 400 }
+      )
+    }
+
+    // 支払いを実行
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'jpy',
+      customer: profile.stripe_customer_id,
+      payment_method: paymentMethods.data[0].id,
+      off_session: true,
+      confirm: true,
+      metadata: {
+        userId,
+        influencerId,
+        roomId,
+        type: 'superchat'
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      paymentIntentId: paymentIntent.id
+    })
 
   } catch (error) {
     console.error('Error in payment process:', error)
+    const message = error instanceof Error ? error.message : '決済処理に失敗しました'
     return NextResponse.json(
-      { error: '決済処理に失敗しました' },
+      { error: message },
       { status: 500 }
     )
   }

@@ -37,11 +37,36 @@ stripePromise.then(
 function PaymentSection() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [hasCard, setHasCard] = useState(false);
+
+  // カード登録状態を確認
+  const checkCardStatus = async () => {
+    if (!user) return;
+
+    try {
+      const response = await fetch(`${window.location.origin}/api/stripe/check-card`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      });
+
+      const data = await response.json();
+      setHasCard(data.hasCard);
+    } catch (error) {
+      console.error('Card status check error:', error);
+    }
+  };
+
+  // コンポーネントマウント時にカード状態を確認
+  useEffect(() => {
+    checkCardStatus();
+  }, [user]);
 
   const handleSetupCard = async () => {
-    console.log('Button clicked');
-
-    console.log('Starting card setup...', { user });
     if (!user) {
       alert('ログインが必要です');
       return;
@@ -49,7 +74,6 @@ function PaymentSection() {
 
     try {
       setLoading(true);
-      console.log('Sending setup request...');
       const response = await fetch(`${window.location.origin}/api/stripe/setup`, {
         method: 'POST',
         headers: {
@@ -61,15 +85,13 @@ function PaymentSection() {
       });
 
       const data = await response.json();
-      console.log('Setup response:', { status: response.status, data });
       if (!response.ok) {
         const errorMessage = data.error || '設定ページの読み込みに失敗しました';
-        const errorDetails = data.details ? `\n詳細: ${data.details}` : '';
+        const errorDetails = data.details ? `
+詳細: ${data.details}` : '';
         throw new Error(`${errorMessage}${errorDetails}`);
       }
 
-      // Stripeの設定ページにリダイレクト
-      console.log('Redirecting to Stripe setup page:', data.url);
       window.location.href = data.url;
     } catch (error) {
       console.error('Setup error:', error);
@@ -84,16 +106,33 @@ function PaymentSection() {
     <div className="mt-6">
       <h3 className="text-lg font-medium">支払い方法</h3>
       <div className="mt-4 p-4 bg-white rounded-lg shadow">
-        <p className="text-gray-600 mb-4">
-          スーパーチャットを送信するためには、クレジットカードの登録が必要です。
-        </p>
-        <button
-          onClick={handleSetupCard}
-          disabled={loading}
-          className="mt-4 bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 disabled:opacity-50"
-        >
-          {loading ? '処理中...' : '支払い方法を設定'}
-        </button>
+        {hasCard ? (
+          <div>
+            <p className="text-gray-600 mb-4">
+              クレジットカードが登録されています。
+            </p>
+            <button
+              onClick={handleSetupCard}
+              disabled={loading}
+              className="mt-4 bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 disabled:opacity-50"
+            >
+              {loading ? '処理中...' : '支払い方法を変更'}
+            </button>
+          </div>
+        ) : (
+          <div>
+            <p className="text-gray-600 mb-4">
+              スーパーチャットを送信するためには、クレジットカードの登録が必要です。
+            </p>
+            <button
+              onClick={handleSetupCard}
+              disabled={loading}
+              className="mt-4 bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 disabled:opacity-50"
+            >
+              {loading ? '処理中...' : '支払い方法を設定'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
