@@ -40,8 +40,26 @@ function ChatRoomHeader({ profile }: ChatRoomHeader) {
             </div>
           </div>
           <SuperChatButton onSendSuperChat={async (amount, message) => {
-            // TODO: スーパーチャットの処理を実装
-            console.log('スーパーチャット:', { amount, message });
+            const { data, error } = await supabase
+              .from('messages')
+              .insert([
+                {
+                  chat_room_id: roomId,
+                  user_id: currentUserId,
+                  content: message,
+                  type: 'superchat',
+                  amount: amount
+                }
+              ])
+              .select('*, sender:profiles(*)')
+              .single()
+
+            if (error) {
+              console.error('Error sending superchat:', error)
+              return
+            }
+
+            setMessages(prev => [...prev, data])
           }} />
         </div>
       </div>
@@ -134,6 +152,8 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               chat_room_id: payload.new.room_id,
               user_id: payload.new.sender_id,
               content: payload.new.content,
+              type: payload.new.type,
+              amount: payload.new.amount,
               sender: senderData
             }
             setMessages((current) => [...current, newMessage])
@@ -213,17 +233,40 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               )}
               <div className={`flex ${message.user_id === currentUserId ? 'justify-end' : 'justify-start'}`}>
                 <div className="flex flex-col max-w-xs lg:max-w-md">
-                  <div
-                    className={`px-4 py-2 rounded-lg ${message.user_id === currentUserId
-                      ? 'bg-pink-600 text-white ml-auto'
-                      : 'bg-white text-gray-900 border border-gray-200 mr-auto'
-                    } shadow-sm`}
-                  >
-                    <div className="text-sm font-semibold mb-1">
-                      {message.sender.username || 'Anonymous'}
+                  {message.type === 'superchat' ? (
+                    <div className="px-4 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-300 shadow-lg border-2 border-yellow-500 w-full">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-white ring-2 ring-yellow-500">
+                            {message.sender.avatar_url ? (
+                              <img
+                                src={message.sender.avatar_url}
+                                alt={message.sender.username || 'Profile'}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">👤</div>
+                            )}
+                          </div>
+                          <span className="font-bold text-gray-900">{message.sender.username || 'Anonymous'}</span>
+                        </div>
+                        <span className="font-bold text-yellow-700 text-lg">¥{message.amount?.toLocaleString()}</span>
+                      </div>
+                      <p className="text-gray-900 mt-2 font-medium">{message.content}</p>
                     </div>
-                    <div>{message.content}</div>
-                  </div>
+                  ) : (
+                    <div
+                      className={`px-4 py-2 rounded-lg ${message.user_id === currentUserId
+                        ? 'bg-pink-600 text-white ml-auto'
+                        : 'bg-white text-gray-900 border border-gray-200 mr-auto'
+                      } shadow-sm`}
+                    >
+                      <div className="text-sm font-semibold mb-1">
+                        {message.sender.username || 'Anonymous'}
+                      </div>
+                      <div>{message.content}</div>
+                    </div>
+                  )}
                   <div className={`text-xs mt-1 ${message.user_id === currentUserId ? 'text-right' : 'text-left'} text-gray-500`}>
                     {formattedTime}
                   </div>
