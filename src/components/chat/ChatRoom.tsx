@@ -45,8 +45,6 @@ function ChatRoomHeader({ profile, roomId, currentUserId, onSendSuperChat }: Cha
           {profile && profile.id && (
             <SuperChatButton 
               onSendSuperChat={onSendSuperChat}
-              roomId={roomId}
-              currentUserId={currentUserId}
             />
           )}
         </div>
