@@ -10,9 +10,11 @@ interface ChatRoomProps {
 
 interface ChatRoomHeader {
   profile: Profile;
+  roomId: string;
+  currentUserId: string;
 }
 
-function ChatRoomHeader({ profile }: ChatRoomHeader) {
+function ChatRoomHeader({ profile, roomId, currentUserId }: ChatRoomHeader) {
   return (
     <div className="bg-white border-b shadow-sm">
       <div className="max-w-3xl mx-auto">
@@ -198,7 +200,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="sticky top-0 z-10">
-        <ChatRoomHeader profile={influencer} />
+        <ChatRoomHeader profile={influencer} roomId={roomId} currentUserId={currentUserId} />
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
         <div className="max-w-3xl mx-auto">
