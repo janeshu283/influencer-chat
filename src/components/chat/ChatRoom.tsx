@@ -213,7 +213,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                   amount,
                   message: message || '',
                   userId: currentUserId,
-                  influencerId: profile.id,
+                  influencerId: influencer.id,
                   roomId: roomId,
                 }),
               });
