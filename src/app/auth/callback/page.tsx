@@ -4,7 +4,11 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 
-export default function AuthCallback() {
+export default function AuthCallback({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}) {
   const router = useRouter()
 
   useEffect(() => {
@@ -12,7 +16,7 @@ export default function AuthCallback() {
       const { data: { session }, error } = await supabase.auth.getSession()
       
       if (!error && session) {
-        const redirectPath = router.nextUrl.searchParams.get('redirect') || '/chat'
+        const redirectPath = (searchParams?.redirect as string) || '/chat'
         router.push(redirectPath)
       } else {
         router.push('/auth?error=authentication_failed')
