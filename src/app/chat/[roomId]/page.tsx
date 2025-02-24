@@ -32,6 +32,7 @@ export default function ChatRoomPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // メッセージとプロフィールの取得
   useEffect(() => {
     const fetchMessages = async () => {
       const { data, error } = await supabase
@@ -55,9 +56,14 @@ export default function ChatRoomPage() {
     }
 
     const fetchProfile = async () => {
-      if (!user) return
+      if (!user) {
+        console.log('User not found, waiting...');
+        return;
+      }
 
       try {
+        console.log('Fetching profile for user:', user.id);
+        
         // チャットルームの情報を取得して、インフルエンサーのIDを特定
         const { data: roomData, error: roomError } = await supabase
           .from('chat_rooms')
@@ -69,6 +75,8 @@ export default function ChatRoomPage() {
           console.error('Error fetching chat room:', roomError)
           return
         }
+
+        console.log('Found room data:', roomData);
 
         // インフルエンサーのプロフィールを取得
         const { data: influencerData, error: influencerError } = await supabase
@@ -82,6 +90,8 @@ export default function ChatRoomPage() {
           return
         }
 
+        console.log('Found influencer data:', influencerData);
+
         if (influencerData) {
           setProfile(influencerData)
         }
@@ -92,7 +102,11 @@ export default function ChatRoomPage() {
     }
 
     fetchMessages()
-    fetchProfile()
+
+    // userが変更されたときにプロフィールを再取得
+    if (user) {
+      fetchProfile()
+    }
 
     // メッセージのリアルタイムサブスクリプション
     const messageSubscription = supabase
@@ -120,7 +134,7 @@ export default function ChatRoomPage() {
     return () => {
       messageSubscription.unsubscribe()
     }
-  }, [roomId])
+  }, [roomId, user]) // userの変更も監視
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
