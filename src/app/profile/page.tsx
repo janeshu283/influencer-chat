@@ -97,45 +97,22 @@ export default function ProfilePage() {
     }
   }
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile()
-    }
-  }, [user])
-
   const updateProfile = async (field: string, value: string) => {
+    if (!user) return
+
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ [field]: value })
-        .eq('id', user?.id)
+        .eq('id', user.id)
 
       if (error) throw error
 
-      // プロフィールを再取得して最新の状態を反映
-      await fetchProfile()
-
-      if (field === 'bio') {
-        setEditingBio(false)
-      }
+      setProfile(prev => prev ? { ...prev, [field]: value } : null)
     } catch (error) {
       console.error('Error updating profile:', error)
       alert('プロフィールの更新に失敗しました')
     }
-  }
-
-  const startEditingBio = () => {
-    setTempBio(profile?.bio || '')
-    setEditingBio(true)
-  }
-
-  const saveBio = () => {
-    updateProfile('bio', tempBio)
-  }
-
-  const cancelEditBio = () => {
-    setEditingBio(false)
-    setTempBio(profile?.bio || '')
   }
 
   if (loading) {
