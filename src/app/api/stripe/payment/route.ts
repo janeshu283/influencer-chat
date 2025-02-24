@@ -46,70 +46,31 @@ export async function POST(request: Request) {
       )
     }
 
-    // ユーザー情報を取得
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile?.stripe_customer_id) {
-      return NextResponse.json(
-        { error: 'カード情報が見つかりません' },
-        { status: 400 }
-      )
-    }
-
-    // 支払い方法を取得
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: profile.stripe_customer_id,
-      type: 'card',
-    })
-
-    if (paymentMethods.data.length === 0) {
-      return NextResponse.json(
-        { error: 'クレジットカードが登録されていません' },
-        { status: 400 }
-      )
-    }
-
-    // 支払いを実行
-    // スーパーチャットをデータベースに保存
-    const { data: superChat, error: insertError } = await supabase
-      .from('super_chats')
-      .insert({
-        user_id: user.id,
-        influencer_id: influencerId,
-        room_id: roomId,
-        amount: amount,
-        status: 'pending'
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Failed to create super chat:', insertError);
-      return NextResponse.json(
-        { error: 'スーパーチャットの作成に失敗しました' },
-        { status: 500 }
-      );
-    }
-
-    // 支払いを実行
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'jpy',
-      customer: profile.stripe_customer_id,
-      payment_method: paymentMethods.data[0].id,
-      off_session: true,
-      confirm: true,
+    // チェックアウトセッションを作成
+    const checkoutSession = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'jpy',
+            product_data: {
+              name: 'スーパーチャット',
+              description: `${amount}円のスーパーチャット`,
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?canceled=true`,
       metadata: {
-        superChatId: superChat.id,
         userId: user.id,
         influencerId,
         roomId,
         type: 'superchat'
-      }
+      },
     })
 
     // スーパーチャットのステータスを更新
@@ -128,15 +89,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      paymentIntent: {
-        id: paymentIntent.id,
-        status: paymentIntent.status
-      },
-      superChat: {
-        id: superChat.id,
-        amount: superChat.amount
-      }
-    })
+      sessionId: checkoutSession.id,
+      sessionUrl: checkoutSession.url
+    });
 
   } catch (err) {
     console.error('Payment error:', err);

@@ -221,20 +221,6 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                 throw new Error('必要な情報が不足しています');
               }
 
-              // カード登録状態を確認
-              const cardCheckResponse = await fetch('/api/stripe/check-card', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                }
-              });
-
-              const cardData = await cardCheckResponse.json();
-              if (!cardData.hasCard) {
-                window.location.href = '/settings/payment';
-                return;
-              }
-
               // 支払い処理
               const response = await fetch('/api/stripe/payment', {
                 method: 'POST',
@@ -250,31 +236,15 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
 
               const data = await response.json();
               if (!response.ok) {
-                if (data.redirect) {
-                  window.location.href = data.redirect;
-                  return;
-                }
                 throw new Error(data.error || 'スーパーチャットの処理中にエラーが発生しました');
               }
 
-              // スーパーチャットメッセージを保存
-              const { error: messageError } = await supabase.from('messages').insert([
-                {
-                  chat_room_id: roomId,
-                  user_id: currentUserId,
-                  content: `スーパーチャット: ${amount}円`,
-                  type: 'superchat',
-                  amount: amount,
-                  payment_intent_id: data.paymentIntent.id
-                }
-              ]);
-
-              if (messageError) {
-                console.error('Failed to save message:', messageError);
-                // 支払いは成功しているので、メッセージの保存エラーはログに記録するだけ
+              // Stripeのチェックアウトページにリダイレクト
+              if (data.sessionUrl) {
+                window.location.href = data.sessionUrl;
+              } else {
+                throw new Error('支払いセッションの作成に失敗しました');
               }
-
-              alert('スーパーチャットを送信しました！');
             } catch (error) {
               console.error('スーパーチャットエラー:', error);
               alert(error instanceof Error ? error.message : 'スーパーチャットの処理中にエラーが発生しました');

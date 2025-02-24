@@ -7,7 +7,6 @@ import { FaInstagram, FaTiktok } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { CameraIcon } from '@heroicons/react/24/outline'
 import { FaTimes } from 'react-icons/fa';
-import PaymentSection from '../settings/payment/page';
 
 interface Profile {
   nickname: string
