@@ -21,7 +21,13 @@ interface Profile {
 }
 
 export default function ChatRoomPage() {
-  const { roomId } = useParams()
+  const params = useParams();
+  const roomId = Array.isArray(params.roomId) ? params.roomId[0] : params.roomId;
+  
+  // roomIdがnullの場合はエラーを表示
+  if (!roomId) {
+    return <div className="flex justify-center p-4">Invalid room ID</div>;
+  }
   const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')

@@ -42,11 +42,13 @@ function ChatRoomHeader({ profile, roomId, currentUserId, onSendSuperChat }: Cha
               </div>
             </div>
           </div>
-          <SuperChatButton 
-            onSendSuperChat={onSendSuperChat}
-            roomId={roomId}
-            currentUserId={currentUserId}
-          />
+          {influencer && influencer.id && (
+            <SuperChatButton 
+              onSendSuperChat={onSendSuperChat}
+              roomId={roomId}
+              currentUserId={currentUserId}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -196,27 +198,43 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           roomId={roomId} 
           currentUserId={currentUserId}
           onSendSuperChat={async (amount, message) => {
-            const response = await fetch('/api/stripe/payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                amount,
-                message,
-                userId: currentUserId,
-                influencerId: influencer.id,
-                roomId: roomId,
-              }),
-            });
+            try {
+              // 必要なパラメーターをチェック
+              if (!amount || !currentUserId || !influencer?.id || !roomId) {
+                throw new Error('Required fields are missing');
+              }
 
-            if (!response.ok) {
-              console.error('Error sending superchat:', await response.text());
-              return;
+              const response = await fetch('/api/stripe/payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  amount,
+                  message: message || '',
+                  userId: currentUserId,
+                  influencerId: influencer.id,
+                  roomId: roomId,
+                }),
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error sending superchat:', errorText);
+                throw new Error(errorText);
+              }
+
+              const data = await response.json();
+              if (!data.url) {
+                throw new Error('Payment URL is missing');
+              }
+
+              window.location.href = data.url;
+            } catch (error) {
+              console.error('Error in super chat process:', error);
+              alert('スーパーチャットの処理中にエラーが発生しました。もう一度お試しください。');
+              throw error;
             }
-
-            const data = await response.json();
-            window.location.href = data.url;
           }}
         />
       </div>
