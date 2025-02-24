@@ -1,20 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set in environment variables');
-}
+const getRequiredEnvVar = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is not set in environment variables`);
+  }
+  return value;
+};
 
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
-}
+const supabaseUrl = getRequiredEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseServiceKey = getRequiredEnvVar('SUPABASE_SERVICE_ROLE_KEY');
 
 export const createServerClient = () => {
   const cookieStore = cookies();
   
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    supabaseUrl,
+    supabaseServiceKey,
     {
       cookies: {
         get(name: string) {
