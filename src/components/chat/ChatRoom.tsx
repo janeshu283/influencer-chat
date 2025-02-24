@@ -102,6 +102,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
         return
       }
 
+      console.log('Loaded messages:', data)
       setMessages(data || [])
       setLoading(false)
     }
@@ -138,6 +139,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               amount: payload.new.amount,
               sender: senderData
             }
+            console.log('New message received:', newMessage)
             setMessages((current) => [...current, newMessage])
           }
         }
