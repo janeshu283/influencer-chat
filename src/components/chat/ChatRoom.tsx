@@ -192,13 +192,26 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           roomId={roomId} 
           currentUserId={currentUserId}
           onSendSuperChat={async (amount) => {
+            console.log('SuperChat Parameters:', {
+              amount,
+              influencerId: influencer?.id,
+              currentUserId,
+              roomId
+            });
+
             if (!amount || !influencer?.id) {
+              console.error('Missing required data:', {
+                amount: amount ? 'present' : 'missing',
+                influencerId: influencer?.id ? 'present' : 'missing'
+              });
               alert('必要な情報が不足しています');
               return;
             }
             
             try {
+              console.log('Starting SuperChat process...');
               // カード登録状態を確認
+              console.log('Checking card status...');
               const cardCheckResponse = await fetch('/api/stripe/check-card', {
                 method: 'POST',
                 headers: {
@@ -210,12 +223,15 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               });
 
               const cardData = await cardCheckResponse.json();
+              console.log('Card check response:', cardData);
               if (!cardData.hasCard) {
+                console.log('No card registered, redirecting to payment settings...');
                 // カードが登録されていない場合、カード登録ページにリダイレクト
                 window.location.href = '/settings/payment';
                 return;
               }
 
+              console.log('Processing payment...');
               // 支払い処理
               const response = await fetch('/api/stripe/payment', {
                 method: 'POST',
@@ -231,6 +247,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               });
 
               const data = await response.json();
+              console.log('Payment response:', data);
               if (!response.ok) {
                 throw new Error(data.error || '投げ銭の処理中にエラーが発生しました');
               }
