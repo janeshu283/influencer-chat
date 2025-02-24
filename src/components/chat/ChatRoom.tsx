@@ -15,7 +15,7 @@ interface ChatRoomHeader {
   onSendSuperChat: (amount: number, message: string) => Promise<void>;
 }
 
-function ChatRoomHeader({ profile, onSendSuperChat }: ChatRoomHeader) {
+function ChatRoomHeader({ profile, roomId, currentUserId, onSendSuperChat }: ChatRoomHeader) {
   return (
     <div className="bg-white border-b shadow-sm">
       <div className="max-w-3xl mx-auto">
@@ -42,7 +42,11 @@ function ChatRoomHeader({ profile, onSendSuperChat }: ChatRoomHeader) {
               </div>
             </div>
           </div>
-          <SuperChatButton onSendSuperChat={onSendSuperChat} />
+          <SuperChatButton 
+            onSendSuperChat={onSendSuperChat}
+            roomId={roomId}
+            currentUserId={currentUserId}
+          />
         </div>
       </div>
     </div>

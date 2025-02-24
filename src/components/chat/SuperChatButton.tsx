@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SuperChatButtonProps {
-  onSendSuperChat: (amount: number, message: string) => void;
+  onSendSuperChat: (amount: number, message: string) => Promise<void>;
+  roomId: string;
+  currentUserId: string;
 }
 
-export default function SuperChatButton({ onSendSuperChat }: SuperChatButtonProps) {
+export default function SuperChatButton({ onSendSuperChat, roomId, currentUserId }: SuperChatButtonProps) {
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [amount, setAmount] = useState(500); // デフォルト金額
