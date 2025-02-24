@@ -93,7 +93,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
     const loadMessages = async () => {
       const { data, error } = await supabase
         .from('messages')
-        .select('*, sender:profiles(*)')
+        .select('*, type, amount, sender:profiles(*)')
         .eq('room_id', roomId)
         .order('created_at')
 
