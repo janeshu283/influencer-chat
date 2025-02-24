@@ -195,7 +195,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           profile={influencer} 
           roomId={roomId} 
           currentUserId={currentUserId}
-          onSendSuperChat={async (amount, message) => {
+          onSendSuperChat={async (amount) => {
             try {
               if (!amount || !currentUserId || !influencer?.id) {
                 throw new Error('必要な情報が不足しています');
