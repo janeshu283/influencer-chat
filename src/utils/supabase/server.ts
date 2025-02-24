@@ -10,14 +10,14 @@ const getRequiredEnvVar = (name: string): string => {
 };
 
 const supabaseUrl = getRequiredEnvVar('NEXT_PUBLIC_SUPABASE_URL');
-const supabaseServiceKey = getRequiredEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseAnonKey = getRequiredEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
 export const createServerClient = () => {
   const cookieStore = cookies();
   
   return createClient(
     supabaseUrl,
-    supabaseServiceKey,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {

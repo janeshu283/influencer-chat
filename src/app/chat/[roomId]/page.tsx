@@ -23,16 +23,16 @@ interface Profile {
 export default function ChatRoomPage() {
   const params = useParams();
   const roomId = Array.isArray(params.roomId) ? params.roomId[0] : params.roomId;
-  
-  // roomIdがnullの場合はエラーを表示
-  if (!roomId) {
-    return <div className="flex justify-center p-4">Invalid room ID</div>;
-  }
   const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [profile, setProfile] = useState<Profile | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // roomIdがnullの場合はエラーを表示
+  if (!roomId) {
+    return <div className="flex justify-center p-4">Invalid room ID</div>;
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
