@@ -1,26 +1,32 @@
-import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-01-27.acacia',
-})
+interface PaymentRequestBody {
+  amount: number;
+  influencerId: string;
+  roomId: string;
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-)
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: 'サービスの初期化に失敗しました' }, { status: 500 })
+    const json = await request.json() as PaymentRequestBody;
+    const { amount, influencerId, roomId } = json;
+
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'ユーザー認証が必要です' },
+        { status: 401 }
+      );
     }
 
-    const body = await req.json()
-    const { amount, influencerId, userId, roomId } = body
-
-    if (!amount || !influencerId || !userId || !roomId) {
+    if (!amount || !influencerId || !roomId) {
       return NextResponse.json({ error: '必要な情報が不足しています' }, { status: 400 })
     }
 
@@ -35,7 +41,7 @@ export async function POST(req: Request) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('stripe_customer_id')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (profileError || !profile?.stripe_customer_id) {
@@ -59,6 +65,28 @@ export async function POST(req: Request) {
     }
 
     // 支払いを実行
+    // スーパーチャットをデータベースに保存
+    const { data: superChat, error: insertError } = await supabase
+      .from('super_chats')
+      .insert({
+        user_id: user.id,
+        influencer_id: influencerId,
+        room_id: roomId,
+        amount: amount,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Failed to create super chat:', insertError);
+      return NextResponse.json(
+        { error: 'スーパーチャットの作成に失敗しました' },
+        { status: 500 }
+      );
+    }
+
+    // 支払いを実行
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'jpy',
@@ -67,24 +95,51 @@ export async function POST(req: Request) {
       off_session: true,
       confirm: true,
       metadata: {
-        userId,
+        superChatId: superChat.id,
+        userId: user.id,
         influencerId,
         roomId,
         type: 'superchat'
       }
     })
 
+    // スーパーチャットのステータスを更新
+    const { error: updateError } = await supabase
+      .from('super_chats')
+      .update({
+        status: paymentIntent.status,
+        payment_intent_id: paymentIntent.id
+      })
+      .eq('id', superChat.id);
+
+    if (updateError) {
+      console.error('Failed to update super chat status:', updateError);
+      // 支払いは成功しているので、エラーはログに記録するだけ
+    }
+
     return NextResponse.json({
       success: true,
-      paymentIntentId: paymentIntent.id
+      paymentIntent: {
+        id: paymentIntent.id,
+        status: paymentIntent.status
+      },
+      superChat: {
+        id: superChat.id,
+        amount: superChat.amount
+      }
     })
 
-  } catch (error) {
-    console.error('Error in payment process:', error)
-    const message = error instanceof Error ? error.message : '決済処理に失敗しました'
+  } catch (err) {
+    console.error('Payment error:', err);
+    if (err instanceof stripe.errors.StripeError) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: message },
+      { error: '支払い処理中にエラーが発生しました' },
       { status: 500 }
-    )
+    );
   }
 }
