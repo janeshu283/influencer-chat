@@ -60,6 +60,99 @@ export default function ProfilePage() {
       alert('プロフィールの更新に失敗しました')
     }
   }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">ログインが必要です</div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">プロフィールが見つかりません</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto py-8 px-4">
+      <div className="bg-white rounded-lg overflow-hidden p-6 space-y-8">
+        <h2 className="text-2xl font-bold text-gray-900">プロフィール</h2>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">ニックネーム</label>
+            <input
+              type="text"
+              value={profile.nickname}
+              onChange={(e) => updateProfile('nickname', e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">自己紹介</label>
+            <textarea
+              rows={4}
+              value={profile.bio || ''}
+              onChange={(e) => updateProfile('bio', e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
+            />
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">SNSアカウント連携</h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <FaXTwitter className="text-xl text-gray-900 mr-3" />
+              <input
+                type="text"
+                value={profile.x || ''}
+                onChange={(e) => updateProfile('x', e.target.value)}
+                placeholder="X ID または URL"
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <FaInstagram className="text-xl text-[#E4405F] mr-3" />
+              <input
+                type="text"
+                value={profile.instagram || ''}
+                onChange={(e) => updateProfile('instagram', e.target.value)}
+                placeholder="Instagram ID または URL"
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <FaTiktok className="text-xl text-black mr-3" />
+              <input
+                type="text"
+                value={profile.tiktok || ''}
+                onChange={(e) => updateProfile('tiktok', e.target.value)}
+                placeholder="TikTok ID または URL"
+                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-gray-900"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
   const { user } = useAuth()
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
