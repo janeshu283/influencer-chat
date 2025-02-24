@@ -153,6 +153,7 @@ export default function ProfilePage() {
       </div>
     </div>
   )
+}
   const { user } = useAuth()
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
