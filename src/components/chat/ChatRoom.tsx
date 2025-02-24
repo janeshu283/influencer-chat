@@ -180,10 +180,6 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
     setNewMessage('')
   }
 
-  if (loading) {
-    return <div className="flex justify-center p-4">Loading...</div>
-  }
-
   if (loading || !influencer) {
     return <div className="flex justify-center p-4">Loading...</div>
   }
@@ -196,7 +192,10 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           roomId={roomId} 
           currentUserId={currentUserId}
           onSendSuperChat={async (amount) => {
-            if (!amount) return;
+            if (!amount || !influencer?.id) {
+              alert('必要な情報が不足しています');
+              return;
+            }
             
             try {
               const response = await fetch('/api/stripe/payment', {
@@ -207,7 +206,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                 body: JSON.stringify({
                   amount,
                   userId: currentUserId,
-                  influencerId: influencer?.id,
+                  influencerId: influencer.id,
                   roomId
                 }),
               });
