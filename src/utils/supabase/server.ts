@@ -14,20 +14,34 @@ const supabaseAnonKey = getRequiredEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
 export const createServerClient = () => {
   const cookieStore = cookies();
-  
+
   return createClient(
     supabaseUrl,
     supabaseAnonKey,
     {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      },
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value;
+          const cookie = cookieStore.get(name);
+          return cookie?.value;
         },
         set(name: string, value: string, options: { path: string; maxAge: number; sameSite: string }) {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // ReadonlyRequestCookiesエラーを無視
+          }
         },
         remove(name: string, options: { path: string }) {
-          cookieStore.set({ name, value: '', ...options });
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // ReadonlyRequestCookiesエラーを無視
+          }
         },
       },
     }

@@ -16,11 +16,21 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient();
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // セッショントークンを取得
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    if (userError || !user) {
+    if (sessionError || !session) {
+      console.error('Authentication error:', sessionError);
       return NextResponse.json(
         { error: 'ユーザー認証が必要です' },
+        { status: 401 }
+      );
+    }
+
+    const user = session.user;
+    if (!user) {
+      return NextResponse.json(
+        { error: 'ユーザー情報が見つかりません' },
         { status: 401 }
       );
     }
