@@ -1,25 +1,65 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { FaInstagram, FaTiktok } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
-import { CameraIcon } from '@heroicons/react/24/outline'
-import { FaTimes } from 'react-icons/fa';
 
 interface Profile {
+  id: string
   nickname: string
-  email: string
   bio: string
   instagram: string
   x: string
   tiktok: string
-  profile_image_url: string
-  is_influencer: boolean
 }
 
 export default function ProfilePage() {
+  const { user } = useAuth()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (error) throw error
+        setProfile(data)
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [user])
+
+  const updateProfile = async (field: string, value: string) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ [field]: value })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setProfile(prev => prev ? { ...prev, [field]: value } : null)
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('プロフィールの更新に失敗しました')
+    }
+  }
   const { user } = useAuth()
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
