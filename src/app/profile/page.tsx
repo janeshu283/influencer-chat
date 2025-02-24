@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { FaInstagram, FaTiktok } from 'react-icons/fa'
@@ -21,7 +21,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
     const fetchProfile = async () => {
       try {
@@ -168,37 +171,6 @@ export default function ProfilePage() {
     </div>
   )
 }
-  const { user } = useAuth()
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true)
-      const file = event.target.files?.[0]
-      if (!file || !user) return
-
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('ファイルサイズは5MB以下にしてください')
-        return
-      }
-
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        alert('画像ファイルを選択してください')
-        return
-      }
-
-      // Convert file to base64
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      
-      const imageUrl = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = reject
-      })
-
-      // Update the profile with the base64 image
-      const { error: updateError } = await supabase
         .from('profiles')
         .update({ profile_image_url: imageUrl })
         .eq('id', user.id)
