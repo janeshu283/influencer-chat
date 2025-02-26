@@ -242,6 +242,7 @@ export default function ChatRoomPage() {
               <SuperChat
                 influencerId={profile.id}
                 influencerName={profile.nickname || 'Anonymous'}
+                roomId={params.roomId as string}
               />
             )}
           </div>
