@@ -1,34 +1,21 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { stripe } from '../../lib/stripe'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: Request) {
   try {
     // リクエストからデータを受け取る
     const json = await request.json()
-    const { amount, message, influencerId, roomId } = json
+    const { amount, message, userId = randomUUID() } = json
 
     console.log('Received payment request:', json)
 
-    // リクエストヘッダーからトークンを取得
-    const supabase = createRouteHandlerClient({ cookies })
-    
-    // ユーザー認証
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      console.error('Authentication error:', authError)
-      return NextResponse.json(
-        { error: '認証エラー: ログインしてください' },
-        { status: 401 }
-      )
-    }
-
     // 必須パラメータのチェック
-    if (!amount || !influencerId || !roomId) {
-      console.error('Missing required parameters:', { amount, influencerId, roomId })
+    if (!amount) {
+      console.error('Missing required parameter: amount')
       return NextResponse.json(
-        { error: '必須パラメータが不足しています' },
+        { error: '金額が指定されていません' },
         { status: 400 }
       )
     }
@@ -40,27 +27,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // スーパーチャットの記録を作成
-    const { data: superChat, error: insertError } = await supabase
-      .from('super_chats')
-      .insert({
-        user_id: user.id,
-        influencer_id: influencerId,
-        room_id: roomId,
-        amount: amount,
-        message: message || null,
-        status: 'pending'
-      })
-      .select()
-      .single()
-
-    if (insertError || !superChat) {
-      console.error('Failed to create super chat record:', insertError)
-      return NextResponse.json(
-        { error: 'スーパーチャットの記録作成に失敗しました' },
-        { status: 500 }
-      )
-    }
+    // 一意のIDを生成
+    const superChatId = randomUUID()
 
     // Stripeのチェックアウトセッションを作成
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -79,27 +47,14 @@ export async function POST(request: Request) {
         }
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat?canceled=true`,
       metadata: {
-        superChatId: superChat.id,
-        userId: user.id,
-        influencerId: influencerId,
-        roomId: roomId,
+        superChatId: superChatId,
+        userId: userId,
         message: message || ''
       }
     })
-
-    // セッションIDを保存
-    const { error: updateError } = await supabase
-      .from('super_chats')
-      .update({ stripe_session_id: checkoutSession.id })
-      .eq('id', superChat.id)
-
-    if (updateError) {
-      console.error('Failed to update super chat with session ID:', updateError)
-      // エラーがあっても処理は続行
-    }
 
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error: any) {

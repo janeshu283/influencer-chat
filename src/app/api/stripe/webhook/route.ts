@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '../../lib/stripe'
-import { createClient } from '../../lib/supabase/server'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -24,56 +23,29 @@ export async function POST(req: Request) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     
-    // メタデータからスーパーチャットIDを取得
+    // メタデータからスーパーチャット情報を取得
     const superChatId = session.metadata?.superChatId
-    if (!superChatId) {
-      console.error('No superChatId found in session metadata')
+    const userId = session.metadata?.userId
+    const message = session.metadata?.message
+    
+    if (!superChatId || !userId) {
+      console.error('Missing required metadata in session', session.metadata)
       return NextResponse.json({ received: true })
     }
 
-    try {
-      // Supabaseクライアントを初期化
-      const supabase = createClient()
-      
-      // スーパーチャットのステータスを更新
-      const { error: updateError } = await supabase
-        .from('super_chats')
-        .update({
-          status: 'completed',
-          stripe_session_id: session.id
-        })
-        .eq('id', superChatId)
+    // 支払い完了をログに記録
+    console.log('Payment completed:', {
+      superChatId,
+      userId,
+      message,
+      amount: session.amount_total,
+      paymentStatus: session.payment_status
+    })
 
-      if (updateError) {
-        console.error('Failed to update super chat status:', updateError)
-        return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
-      }
+    // ここで必要に応じて支払い情報をデータベースに記録できます
+    // 現在のMVPでは単純にログ出力のみ行います
 
-      // メッセージを作成（オプション）
-      const messageContent = session.metadata?.message
-        ? `スーパーチャット: ${session.metadata.message}`
-        : 'スーパーチャットありがとうございます！'
-
-      // メッセージをチャットに追加
-      const { error: insertError } = await supabase
-        .from('messages')
-        .insert({
-          room_id: session.metadata?.roomId,
-          user_id: session.metadata?.userId,
-          content: messageContent,
-          type: 'superchat'
-        })
-
-      if (insertError) {
-        console.error('Failed to insert message:', insertError)
-        // メッセージ挿入エラーは無視して処理を続行
-      }
-
-      return NextResponse.json({ success: true })
-    } catch (error: any) {
-      console.error('Error processing webhook:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    return NextResponse.json({ success: true })
   }
 
   // その他のイベントは正常に受信したことを返す
