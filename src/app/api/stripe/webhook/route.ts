@@ -32,6 +32,55 @@ export async function POST(request: Request) {
     }
 
     try {
+      const { data: superChat, error: superChatError } = await supabase
+        .from('super_chats')
+        .select('*')
+        .eq('stripe_session_id', session.id)
+        .single()
+
+      if (superChatError || !superChat) {
+        console.error('Failed to find super chat record:', superChatError)
+        return NextResponse.json(
+          { error: 'スーパーチャットの記録が見つかりませんでした' },
+          { status: 404 }
+        )
+      }
+
+      // UUIDの形式チェック
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      let validRoomId = superChat.room_id;
+      
+      // roomIdがUUID形式でない場合の処理
+      if (!uuidRegex.test(superChat.room_id)) {
+        console.error('Invalid room_id format in webhook:', superChat.room_id)
+        
+        try {
+          const { data: roomData, error: roomError } = await supabase
+            .from('chat_rooms')
+            .select('id')
+            .eq('id', superChat.room_id)
+            .single()
+
+          if (roomError || !roomData) {
+            console.error('Failed to find room in webhook:', roomError)
+            return NextResponse.json(
+              { error: 'チャットルームが見つかりません' },
+              { status: 404 }
+            )
+          }
+          
+          validRoomId = roomData.id
+          console.log('Found valid room id in webhook:', validRoomId)
+        } catch (error) {
+          console.error('Error validating room id in webhook:', error)
+          return NextResponse.json(
+            { error: 'チャットルームの検証に失敗しました' },
+            { status: 500 }
+          )
+        }
+      }
+
+      // スーパーチャットの状態を更新
       const { error: updateError } = await supabase
         .from('super_chats')
         .update({
@@ -57,7 +106,7 @@ export async function POST(request: Request) {
       const { error: insertError } = await supabase
         .from('messages')
         .insert({
-          room_id: session.metadata.roomId,
+          room_id: validRoomId,
           user_id: session.metadata.userId,
           content: messageContent,
           type: 'superchat'
