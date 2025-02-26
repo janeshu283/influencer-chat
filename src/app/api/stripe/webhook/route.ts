@@ -7,12 +7,21 @@ export async function POST(req: Request) {
   const body = await req.text()
   const signature = headers().get('stripe-signature') || ''
 
+  // webhook secretが設定されていない場合のエラーハンドリング
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('Missing STRIPE_WEBHOOK_SECRET environment variable')
+    return NextResponse.json(
+      { error: 'Webhook secret is not configured' },
+      { status: 500 }
+    )
+  }
+
   let event: Stripe.Event
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET
     )
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message)

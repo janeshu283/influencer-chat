@@ -30,6 +30,10 @@ export async function POST(request: Request) {
     // 一意のIDを生成
     const superChatId = randomUUID()
 
+    // サイトのベースURLを取得（環境変数がない場合はリクエストのオリジンを使用）
+    const origin = request.headers.get('origin') || 'http://localhost:3000'
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+
     // Stripeのチェックアウトセッションを作成
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -47,8 +51,8 @@ export async function POST(request: Request) {
         }
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat?canceled=true`,
+      success_url: `${siteUrl}/chat?success=true`,
+      cancel_url: `${siteUrl}/chat?canceled=true`,
       metadata: {
         superChatId: superChatId,
         userId: userId,
