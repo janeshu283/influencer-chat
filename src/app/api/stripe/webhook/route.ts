@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '../../../lib/stripe'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
     // メタデータからスーパーチャット情報を取得
     const superChatId = session.metadata?.superChatId
     const userId = session.metadata?.userId
-    const message = session.metadata?.message
+    const message = session.metadata?.message || 'スーパーチャットありがとうございます！'
+    const amount = session.amount_total
     
     if (!superChatId || !userId) {
       console.error('Missing required metadata in session', session.metadata)
@@ -47,14 +49,60 @@ export async function POST(req: Request) {
       superChatId,
       userId,
       message,
-      amount: session.amount_total,
+      amount,
       paymentStatus: session.payment_status
     })
 
-    // ここで必要に応じて支払い情報をデータベースに記録できます
-    // 現在のMVPでは単純にログ出力のみ行います
+    try {
+      // Supabaseクライアントを初期化
+      const supabase = createClient()
+      
+      // チャットルームIDを取得（ない場合はデフォルトルームを使用）
+      const { data: rooms, error: roomsError } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .limit(1)
+      
+      if (roomsError) {
+        console.error('Error fetching chat rooms:', roomsError)
+        return NextResponse.json({ error: 'Failed to fetch chat rooms' }, { status: 500 })
+      }
+      
+      const roomId = rooms && rooms.length > 0 ? rooms[0].id : null
+      
+      if (!roomId) {
+        console.error('No chat room found')
+        return NextResponse.json({ error: 'No chat room found' }, { status: 500 })
+      }
+      
+      // スーパーチャットメッセージをチャットに追加
+      const formattedAmount = new Intl.NumberFormat('ja-JP', {
+        style: 'currency',
+        currency: 'JPY'
+      }).format(amount ? amount / 100 : 0)
+      
+      const superChatMessage = `💰 ${formattedAmount} スーパーチャット: ${message}`
+      
+      const { error: insertError } = await supabase
+        .from('messages')
+        .insert({
+          chat_room_id: roomId,
+          user_id: userId,
+          content: superChatMessage,
+          type: 'superchat',
+          amount: amount ? amount / 100 : 0
+        })
 
-    return NextResponse.json({ success: true })
+      if (insertError) {
+        console.error('Failed to insert superchat message:', insertError)
+        return NextResponse.json({ error: 'Failed to insert message' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true })
+    } catch (error: any) {
+      console.error('Error processing webhook:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
   }
 
   // その他のイベントは正常に受信したことを返す

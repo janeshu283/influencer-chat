@@ -272,10 +272,10 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
               <div className={`flex ${message.user_id === currentUserId ? 'justify-end' : 'justify-start'}`}>
                 <div className="flex flex-col max-w-xs lg:max-w-md">
                   {message.type === 'superchat' ? (
-                    <div className="px-4 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-300 shadow-lg border-2 border-yellow-500 w-full">
+                    <div className="px-4 py-3 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 shadow-lg border-2 border-pink-300 w-full">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-white ring-2 ring-yellow-500">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-white ring-2 ring-pink-300">
                             {message.sender.avatar_url ? (
                               <img
                                 src={message.sender.avatar_url}
@@ -286,11 +286,11 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
                               <div className="w-full h-full flex items-center justify-center text-gray-400">👤</div>
                             )}
                           </div>
-                          <span className="font-bold text-gray-900">{message.sender.username || 'Anonymous'}</span>
+                          <span className="font-bold text-white">{message.sender.username || 'Anonymous'}</span>
                         </div>
-                        <span className="font-bold text-yellow-700 text-lg">¥{message.amount?.toLocaleString()}</span>
+                        <span className="font-bold text-white text-lg">¥{message.amount?.toLocaleString()}</span>
                       </div>
-                      <p className="text-gray-900 mt-2 font-medium">{message.content}</p>
+                      <p className="text-white mt-2 font-medium">{message.content}</p>
                     </div>
                   ) : (
                     <div
