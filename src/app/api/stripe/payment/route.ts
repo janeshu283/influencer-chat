@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json({ url: checkoutSession.url })
+    return NextResponse.json({ sessionUrl: checkoutSession.url })
   } catch (error: any) {
     console.error('Payment processing error:', error)
     return NextResponse.json(

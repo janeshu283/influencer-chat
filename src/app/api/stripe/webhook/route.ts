@@ -5,6 +5,8 @@ import { stripe } from '../../../lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
+  console.log('Webhook received')
+  
   const body = await req.text()
   const signature = headers().get('stripe-signature') || ''
 
@@ -24,6 +26,7 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     )
+    console.log('Webhook event type:', event.type)
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message)
     return NextResponse.json({ error: err.message }, { status: 400 })
@@ -32,6 +35,7 @@ export async function POST(req: Request) {
   // チェックアウトセッション完了イベントを処理
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
+    console.log('Session data:', JSON.stringify(session, null, 2))
     
     // メタデータからスーパーチャット情報を取得
     const superChatId = session.metadata?.superChatId
@@ -59,12 +63,16 @@ export async function POST(req: Request) {
         throw new Error('Supabase credentials are not configured')
       }
       
+      console.log('Initializing Supabase client with:', {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL
+      })
+      
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
       
-      // チャットルームIDを取得（ない場合はデフォルトルームを使用）
+      console.log('Fetching chat rooms')
       const { data: rooms, error: roomsError } = await supabase
         .from('chat_rooms')
         .select('id')
@@ -75,6 +83,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Failed to fetch chat rooms' }, { status: 500 })
       }
       
+      console.log('Fetched rooms:', rooms)
       const roomId = rooms && rooms.length > 0 ? rooms[0].id : null
       
       if (!roomId) {
@@ -89,22 +98,27 @@ export async function POST(req: Request) {
       }).format(amount ? amount / 100 : 0)
       
       const superChatMessage = `💰 ${formattedAmount} スーパーチャット: ${message}`
+      console.log('Inserting superchat message:', superChatMessage)
       
+      const messageData = {
+        chat_room_id: roomId,
+        user_id: userId,
+        content: superChatMessage,
+        type: 'superchat',
+        amount: amount ? amount / 100 : 0
+      }
+      
+      console.log('Message data:', messageData)
       const { error: insertError } = await supabase
         .from('messages')
-        .insert({
-          chat_room_id: roomId,
-          user_id: userId,
-          content: superChatMessage,
-          type: 'superchat',
-          amount: amount ? amount / 100 : 0
-        })
+        .insert(messageData)
 
       if (insertError) {
         console.error('Failed to insert superchat message:', insertError)
         return NextResponse.json({ error: 'Failed to insert message' }, { status: 500 })
       }
 
+      console.log('Successfully inserted superchat message')
       return NextResponse.json({ success: true })
     } catch (error: any) {
       console.error('Error processing webhook:', error)
