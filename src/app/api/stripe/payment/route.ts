@@ -14,6 +14,10 @@ export async function POST(request: Request) {
     const json = await request.json() as PaymentRequestBody
     const { amount, message, influencerId, roomId } = json
 
+    // デバッグ: 受信データを確認
+    console.log('Received payment request:', json)
+    console.log('Extracted values:', { amount, message, influencerId, roomId })
+
     // リクエストヘッダーからトークンを取得
     const authHeader = request.headers.get('Authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -37,9 +41,27 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!amount || !influencerId || !roomId) {
+    // 必須パラメータのチェック（より詳細なエラーメッセージ）
+    if (!amount) {
+      console.error('Missing amount in request')
       return NextResponse.json(
-        { error: '必要な情報が不足しています' },
+        { error: '金額が指定されていません' },
+        { status: 400 }
+      )
+    }
+
+    if (!influencerId) {
+      console.error('Missing influencerId in request')
+      return NextResponse.json(
+        { error: 'インフルエンサーIDが指定されていません' },
+        { status: 400 }
+      )
+    }
+
+    if (!roomId) {
+      console.error('Missing roomId in request')
+      return NextResponse.json(
+        { error: 'ルームIDが指定されていません' },
         { status: 400 }
       )
     }

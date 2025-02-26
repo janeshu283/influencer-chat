@@ -34,6 +34,25 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
         throw new Error('認証エラー: セッションが無効です')
       }
 
+      // デバッグ: 送信データを確認
+      console.log('Sending superchat data:', {
+        amount,
+        message,
+        influencerId,
+        roomId
+      })
+
+      // 必須パラメータのチェック
+      if (!influencerId) {
+        throw new Error('インフルエンサーIDが不足しています')
+      }
+      if (!roomId) {
+        throw new Error('ルームIDが不足しています')
+      }
+      if (!amount) {
+        throw new Error('金額が指定されていません')
+      }
+
       // 支払い処理を開始
       const response = await fetch('/api/stripe/payment', {
         method: 'POST',
@@ -52,6 +71,7 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
       const data = await response.json()
 
       if (!response.ok) {
+        console.error('API response error:', data)
         throw new Error(data.error || '支払い処理中にエラーが発生しました')
       }
 
