@@ -1,111 +1,36 @@
 import { NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { stripe } from '@/lib/stripe'
-import { createServerClient } from '@/utils/supabase/server'
-
-interface PaymentRequestBody {
-  amount: number
-  message?: string
-  influencerId: string
-  roomId: string
-}
 
 export async function POST(request: Request) {
   try {
-    const json = await request.json() as PaymentRequestBody
+    // リクエストからデータを受け取る
+    const json = await request.json()
     const { amount, message, influencerId, roomId } = json
 
-    // デバッグ: 受信データを確認
     console.log('Received payment request:', json)
-    console.log('Extracted values:', { amount, message, influencerId, roomId })
 
     // リクエストヘッダーからトークンを取得
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'ユーザー認証が必要です' },
-        { status: 401 }
-      )
-    }
-
-    const token = authHeader.split(' ')[1]
-    const supabase = createServerClient()
-
-    // トークンを使用してユーザー情報を取得
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
+    const supabase = createRouteHandlerClient({ cookies })
+    
+    // ユーザー認証
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       console.error('Authentication error:', authError)
       return NextResponse.json(
-        { error: 'ユーザー認証が必要です' },
+        { error: '認証エラー: ログインしてください' },
         { status: 401 }
       )
     }
 
-    // 必須パラメータのチェック（より詳細なエラーメッセージ）
-    if (!amount) {
-      console.error('Missing amount in request')
+    // 必須パラメータのチェック
+    if (!amount || !influencerId || !roomId) {
+      console.error('Missing required parameters:', { amount, influencerId, roomId })
       return NextResponse.json(
-        { error: '金額が指定されていません' },
+        { error: '必須パラメータが不足しています' },
         { status: 400 }
       )
-    }
-
-    if (!influencerId) {
-      console.error('Missing influencerId in request')
-      return NextResponse.json(
-        { error: 'インフルエンサーIDが指定されていません' },
-        { status: 400 }
-      )
-    }
-
-    if (!roomId) {
-      console.error('Missing roomId in request')
-      return NextResponse.json(
-        { error: 'ルームIDが指定されていません' },
-        { status: 400 }
-      )
-    }
-
-    // UUIDの形式チェック
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    
-    if (!uuidRegex.test(influencerId)) {
-      console.error('Invalid influencerId format:', influencerId)
-      return NextResponse.json(
-        { error: 'インフルエンサーIDの形式が無効です' },
-        { status: 400 }
-      )
-    }
-
-    // roomIdがUUID形式かチェック
-    let validRoomId = roomId;
-    if (!uuidRegex.test(roomId)) {
-      // roomIdがUUID形式でない場合、データベースから実際のUUIDを取得
-      try {
-        console.log('Attempting to find room by id:', roomId)
-        const { data: roomData, error: roomError } = await supabase
-          .from('chat_rooms')
-          .select('id')
-          .eq('id', roomId)
-          .single()
-
-        if (roomError || !roomData) {
-          console.error('Failed to find room:', roomError)
-          return NextResponse.json(
-            { error: 'チャットルームが見つかりません' },
-            { status: 404 }
-          )
-        }
-        
-        validRoomId = roomData.id
-        console.log('Found valid room id:', validRoomId)
-      } catch (error) {
-        console.error('Error validating room id:', error)
-        return NextResponse.json(
-          { error: 'チャットルームの検証に失敗しました' },
-          { status: 500 }
-        )
-      }
     }
 
     if (amount < 100 || amount > 50000) {
@@ -121,7 +46,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: user.id,
         influencer_id: influencerId,
-        room_id: validRoomId,
+        room_id: roomId,
         amount: amount,
         message: message || null,
         status: 'pending'
@@ -131,74 +56,56 @@ export async function POST(request: Request) {
 
     if (insertError || !superChat) {
       console.error('Failed to create super chat record:', insertError)
-      console.error('Insert error details:', {
-        code: insertError?.code,
-        message: insertError?.message,
-        details: insertError?.details,
-        hint: insertError?.hint
-      })
       return NextResponse.json(
         { error: 'スーパーチャットの記録作成に失敗しました' },
         { status: 500 }
       )
     }
 
-    // チェックアウトセッションを作成
+    // Stripeのチェックアウトセッションを作成
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      mode: 'payment',
       line_items: [
         {
           price_data: {
             currency: 'jpy',
             product_data: {
               name: 'スーパーチャット',
-              description: `${amount}円のスーパーチャット${message ? ` - "${message}"` : ''}`,
+              description: message ? `メッセージ: ${message}` : '応援メッセージ'
             },
-            unit_amount: amount,
+            unit_amount: amount
           },
-          quantity: 1,
-        },
+          quantity: 1
+        }
       ],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/chat/${roomId}?canceled=true`,
       metadata: {
-        userId: user.id,
-        influencerId,
-        roomId,
         superChatId: superChat.id,
-        message: message || '',
-        type: 'superchat'
-      },
+        userId: user.id,
+        influencerId: influencerId,
+        roomId: roomId,
+        message: message || ''
+      }
     })
 
-    // セッションIDを記録
+    // セッションIDを保存
     const { error: updateError } = await supabase
       .from('super_chats')
-      .update({
-        stripe_session_id: checkoutSession.id
-      })
+      .update({ stripe_session_id: checkoutSession.id })
       .eq('id', superChat.id)
 
     if (updateError) {
-      console.error('Failed to update session ID:', updateError)
-      // エラーはログに記録するだけ
+      console.error('Failed to update super chat with session ID:', updateError)
+      // エラーがあっても処理は続行
     }
 
-    return NextResponse.json({
-      url: checkoutSession.url
-    })
-
-  } catch (err) {
-    console.error('Payment error:', err)
-    if (err instanceof stripe.errors.StripeError) {
-      return NextResponse.json(
-        { error: err.message },
-        { status: 400 }
-      )
-    }
+    return NextResponse.json({ url: checkoutSession.url })
+  } catch (error: any) {
+    console.error('Payment processing error:', error)
     return NextResponse.json(
-      { error: '支払い処理中にエラーが発生しました' },
+      { error: error.message || '支払い処理中にエラーが発生しました' },
       { status: 500 }
     )
   }
