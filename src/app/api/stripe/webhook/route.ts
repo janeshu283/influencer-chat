@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '../../../lib/stripe'
-import { createClient } from '../../../../lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -54,8 +54,15 @@ export async function POST(req: Request) {
     })
 
     try {
-      // Supabaseクライアントを初期化
-      const supabase = createClient()
+      // 直接Supabaseクライアントを初期化
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase credentials are not configured')
+      }
+      
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
       
       // チャットルームIDを取得（ない場合はデフォルトルームを使用）
       const { data: rooms, error: roomsError } = await supabase
