@@ -48,13 +48,18 @@ export async function POST(request: Request) {
         )
       }
 
+      // メッセージ内容を取得
+      const messageContent = session.metadata.message 
+        ? `スーパーチャット: ${session.amount_total ? (session.amount_total / 100) : 0}円 - "${session.metadata.message}"`
+        : `スーパーチャット: ${session.amount_total ? (session.amount_total / 100) : 0}円`
+
       // チャットメッセージとして保存
       const { error: insertError } = await supabase
         .from('messages')
         .insert({
           room_id: session.metadata.roomId,
           user_id: session.metadata.userId,
-          content: `スーパーチャット: ${session.amount_total}円`,
+          content: messageContent,
           type: 'superchat'
         })
 

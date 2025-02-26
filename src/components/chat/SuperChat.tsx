@@ -11,6 +11,7 @@ interface SuperChatProps {
 
 export default function SuperChat({ influencerId, influencerName, roomId }: SuperChatProps) {
   const [amount, setAmount] = useState<number>(500)
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { user } = useAuth()
@@ -42,6 +43,7 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
         },
         body: JSON.stringify({
           amount,
+          message,
           influencerId,
           roomId
         })
@@ -120,6 +122,23 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
                     ¥{value.toLocaleString()}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                メッセージ (任意)
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="応援メッセージを入力（最大100文字）"
+                maxLength={100}
+                className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-pink-500 focus:ring-0 text-gray-900 placeholder-gray-400"
+                rows={3}
+              />
+              <div className="text-right text-xs text-gray-500 mt-1">
+                {message.length}/100
               </div>
             </div>
 

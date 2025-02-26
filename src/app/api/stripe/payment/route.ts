@@ -4,6 +4,7 @@ import { createServerClient } from '@/utils/supabase/server'
 
 interface PaymentRequestBody {
   amount: number
+  message?: string
   influencerId: string
   roomId: string
 }
@@ -11,7 +12,7 @@ interface PaymentRequestBody {
 export async function POST(request: Request) {
   try {
     const json = await request.json() as PaymentRequestBody
-    const { amount, influencerId, roomId } = json
+    const { amount, message, influencerId, roomId } = json
 
     // リクエストヘッダーからトークンを取得
     const authHeader = request.headers.get('Authorization')
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
         influencer_id: influencerId,
         room_id: roomId,
         amount: amount,
+        message: message || null,
         status: 'pending'
       })
       .select()
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
             currency: 'jpy',
             product_data: {
               name: 'スーパーチャット',
-              description: `${amount}円のスーパーチャット`,
+              description: `${amount}円のスーパーチャット${message ? ` - "${message}"` : ''}`,
             },
             unit_amount: amount,
           },
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
         influencerId,
         roomId,
         superChatId: superChat.id,
+        message: message || '',
         type: 'superchat'
       },
     })
