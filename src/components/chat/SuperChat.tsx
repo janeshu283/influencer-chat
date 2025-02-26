@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'  // Supabaseクライアントのインポート
+import { supabase } from '@/lib/supabase/client'
 
 interface SuperChatProps {
   influencerId: string
@@ -11,29 +11,12 @@ interface SuperChatProps {
 
 export default function SuperChat({ influencerId, influencerName, roomId }: SuperChatProps) {
   const [amount, setAmount] = useState<number>(500)
-  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [hasCard, setHasCard] = useState<boolean | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    const checkCard = async () => {
-      if (!user) return
-
-      try {
-        const response = await fetch(`/api/stripe/check-card?userId=${user.id}`)
-        const data = await response.json()
-        setHasCard(data.hasCard)
-      } catch (error) {
-        console.error('Failed to check card:', error)
-        setHasCard(false)
-      }
-    }
-
-    checkCard()
-  }, [user])
+  const predefinedAmounts = [100, 500, 2000, 5000, 10000]
 
   const handleSuperChat = async () => {
     if (!user) {
@@ -41,100 +24,50 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
       return
     }
 
-    if (!hasCard) {
-      const shouldSetup = window.confirm('送信にはクレジットカードの登録が必要です。登録ページに移動しますか？')
-      if (shouldSetup) {
-        router.push('/settings/payment')
-      }
-      setIsModalOpen(false)
-      return
-    }
-
     try {
       setLoading(true)
-      const requestData = {
-        amount,
-        influencerId,
-        roomId,
-      }
-      console.log('Sending superchat request:', requestData)
 
-      // Supabaseのアクセストークンを取得（実装に合わせて調整）
+      // セッションからアクセストークンを取得
       const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      if (!session?.access_token) {
+        throw new Error('認証エラー: セッションが無効です')
+      }
 
-      const url = `${window.location.origin}/api/stripe/payment`
-      console.log('Making request to:', url)
-      const response = await fetch(url, {
+      // 支払い処理を開始
+      const response = await fetch('/api/stripe/payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          // アクセストークンをヘッダーに追加（サーバー側がこのトークンを検証できる場合）
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(requestData),
-      })
-
-      console.log('Response status:', response.status)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-
-      const contentType = response.headers.get('content-type')
-      console.log('Content-Type:', contentType)
-
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json()
-        console.log('Response data:', {
-          status: response.status,
-          ok: response.ok,
-          data,
-          headers: Object.fromEntries(response.headers.entries())
+        body: JSON.stringify({
+          amount,
+          influencerId,
+          roomId
         })
-
-        if (data.url) {
-          window.location.href = data.url
-          return
-        }
-
-        if (!response.ok) {
-          throw new Error(data.error || data.details || 'エラーが発生しました')
-        }
-
-        if (!data.url) {
-          console.error('Missing URL in response:', data)
-          throw new Error('StripeのチェックアウトURLが見つかりません')
-        }
-
-        window.location.href = data.url
-      } else {
-        try {
-          const text = await response.clone().text()
-          console.error('Non-JSON response details:', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries()),
-            contentType,
-            body: text,
-            url: response.url
-          })
-        } catch (textError) {
-          console.error('Failed to read response text:', textError)
-        }
-        throw new Error('サーバーからの応答が不正です')
-      }
-    } catch (error) {
-      console.error('SuperChat error:', {
-        error,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
       })
-      alert(`スーパーチャットの処理中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`)
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || '支払い処理中にエラーが発生しました')
+      }
+
+      if (!data.url) {
+        throw new Error('Stripeの支払いURLが見つかりません')
+      }
+
+      // Stripeのチェックアウトページに遷移
+      window.location.href = data.url
+
+    } catch (error) {
+      console.error('SuperChat error:', error)
+      alert(error instanceof Error ? error.message : '予期せぬエラーが発生しました')
     } finally {
       setLoading(false)
+      setIsModalOpen(false)
     }
   }
-
-  const predefinedAmounts = [100, 500, 2000, 5000, 10000]
 
   return (
     <div>
@@ -166,7 +99,7 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
             </div>
 
             <h2 className="text-xl font-bold mb-2">{influencerName}さんをサポート</h2>
-            <p className="text-sm text-gray-600 mb-6">メンバーシップやスーパーチャットでサポートできます。</p>
+            <p className="text-sm text-gray-600 mb-6">スーパーチャットでサポートできます。</p>
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -190,34 +123,13 @@ export default function SuperChat({ influencerId, influencerName, roomId }: Supe
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                メッセージ
-              </label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-pink-500 focus:ring-0 text-gray-900 placeholder-gray-400"
-                rows={3}
-                maxLength={100}
-                placeholder="応援しています！"
-              />
-              <p className="text-xs text-gray-500 mt-1">最大100文字まで</p>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                キャンセル
-              </button>
+            <div className="mt-6">
               <button
                 onClick={handleSuperChat}
                 disabled={loading}
-                className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? '処理中...' : '送信'}
+                {loading ? '処理中...' : 'スーパーチャットを送信'}
               </button>
             </div>
           </div>
