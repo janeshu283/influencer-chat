@@ -89,6 +89,12 @@ export async function POST(request: Request) {
 
     if (insertError || !superChat) {
       console.error('Failed to create super chat record:', insertError)
+      console.error('Insert error details:', {
+        code: insertError?.code,
+        message: insertError?.message,
+        details: insertError?.details,
+        hint: insertError?.hint
+      })
       return NextResponse.json(
         { error: 'スーパーチャットの記録作成に失敗しました' },
         { status: 500 }
