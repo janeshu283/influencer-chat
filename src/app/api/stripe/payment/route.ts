@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { stripe } from '../../lib/stripe'
+import { stripe } from '../../../lib/stripe'
 import { randomUUID } from 'crypto'
 
 export async function POST(request: Request) {
