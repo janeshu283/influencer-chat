@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { stripe } from '../../../lib/stripe'
+import { stripe } from '../../lib/stripe'
 
 export async function POST(request: Request) {
   try {
