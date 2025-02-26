@@ -50,12 +50,12 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
         throw new Error(data.error || '支払い処理中にエラーが発生しました')
       }
 
-      if (!data.url) {
+      if (!data.sessionUrl) {
         throw new Error('Stripeの支払いURLが見つかりません')
       }
 
       // Stripeのチェックアウトページに遷移
-      window.location.href = data.url
+      window.location.href = data.sessionUrl
 
     } catch (error) {
       console.error('SuperChat error:', error)
