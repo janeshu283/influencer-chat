@@ -66,6 +66,48 @@ export async function POST(request: Request) {
       )
     }
 
+    // UUIDの形式チェック
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (!uuidRegex.test(influencerId)) {
+      console.error('Invalid influencerId format:', influencerId)
+      return NextResponse.json(
+        { error: 'インフルエンサーIDの形式が無効です' },
+        { status: 400 }
+      )
+    }
+
+    // roomIdがUUID形式かチェック
+    let validRoomId = roomId;
+    if (!uuidRegex.test(roomId)) {
+      // roomIdがUUID形式でない場合、データベースから実際のUUIDを取得
+      try {
+        console.log('Attempting to find room by id:', roomId)
+        const { data: roomData, error: roomError } = await supabase
+          .from('chat_rooms')
+          .select('id')
+          .eq('id', roomId)
+          .single()
+
+        if (roomError || !roomData) {
+          console.error('Failed to find room:', roomError)
+          return NextResponse.json(
+            { error: 'チャットルームが見つかりません' },
+            { status: 404 }
+          )
+        }
+        
+        validRoomId = roomData.id
+        console.log('Found valid room id:', validRoomId)
+      } catch (error) {
+        console.error('Error validating room id:', error)
+        return NextResponse.json(
+          { error: 'チャットルームの検証に失敗しました' },
+          { status: 500 }
+        )
+      }
+    }
+
     if (amount < 100 || amount > 50000) {
       return NextResponse.json(
         { error: '金額は100円から50,000円の間で指定してください' },
@@ -79,7 +121,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: user.id,
         influencer_id: influencerId,
-        room_id: roomId,
+        room_id: validRoomId,
         amount: amount,
         message: message || null,
         status: 'pending'
