@@ -7,14 +7,15 @@ export default function SuperChatList({ roomId }: { roomId: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadSuperChats = async () => {
+    // まずスーパーチャットデータを取得
     const { data, error } = await supabase
       .from('super_chats')
       .select(`
         *,
-        user:profiles(id, username, avatar_url),
-        influencer:profiles(id, username, avatar_url)
+        user:user_id(id, username, avatar_url),
+        influencer:influencer_id(id, username, avatar_url)
       `)
-      .eq('room_id', roomId) // もし room_id を管理する場合
+      .eq('room_id', roomId)
       .order('created_at', { ascending: true })
     if (error) {
       console.error('Error loading super chats:', error)
@@ -34,7 +35,7 @@ export default function SuperChatList({ roomId }: { roomId: string }) {
       {superChats.map(chat => (
         <div key={chat.id} className="p-2 my-2 border rounded">
           <div className="font-bold">
-            {chat.user?.username} → {chat.influencer?.username}
+            {chat.user?.username || '不明なユーザー'} → {chat.influencer?.username || '不明なインフルエンサー'}
           </div>
           <div>
             {chat.amount}円 : {chat.message}

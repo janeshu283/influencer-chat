@@ -68,12 +68,13 @@ export async function POST(req: Request) {
         id: superChatId,
         user_id: userId,
         influencer_id: influencerId,
-        room_id: roomId || null,  // undefinedの場合はnullを設定
+        room_id: roomId || null, // undefinedの場合はnullを設定
         amount: amount ? amount / 100 : 0, // 金額を円単位に変換（Stripe は最小通貨単位）
         message: message,
         status: session.payment_status, // 例: "paid"
         stripe_session_id: session.id,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        user: undefined
       }
       
       console.log('Inserting super chat data:', superChatData)
