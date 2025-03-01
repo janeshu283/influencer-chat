@@ -1,3 +1,4 @@
+// /src/app/api/stripe/webhook/route.ts
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
@@ -6,9 +7,9 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   console.log('Webhook received')
-  
+
   const body = await req.text()
-  const signature = headers().get('stripe-signature') || ''
+  const signature = (await headers()).get('stripe-signature') || ''
 
   // webhook secretが設定されていない場合のエラーハンドリング
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
@@ -38,12 +39,14 @@ export async function POST(req: Request) {
     console.log('Session data:', JSON.stringify(session, null, 2))
     
     // メタデータからスーパーチャット情報を取得
-    const superChatId = session.metadata?.superChatId
+    // ※ この実装では、metadataに influencerId も設定している前提です
+    const superChatId = session.metadata?.superChatId  // （必要に応じて使用）
     const userId = session.metadata?.userId
+    const influencerId = session.metadata?.influencerId
     const message = session.metadata?.message || 'スーパーチャットありがとうございます！'
     const amount = session.amount_total
-    
-    if (!superChatId || !userId) {
+
+    if (!userId || !influencerId) {
       console.error('Missing required metadata in session', session.metadata)
       return NextResponse.json({ received: true })
     }
@@ -52,13 +55,14 @@ export async function POST(req: Request) {
     console.log('Payment completed:', {
       superChatId,
       userId,
+      influencerId,
       message,
       amount,
       paymentStatus: session.payment_status
     })
 
     try {
-      // 直接Supabaseクライアントを初期化
+      // Supabaseクライアントの初期化
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         throw new Error('Supabase credentials are not configured')
       }
@@ -72,53 +76,28 @@ export async function POST(req: Request) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
       
-      console.log('Fetching chat rooms')
-      const { data: rooms, error: roomsError } = await supabase
-        .from('chat_rooms')
-        .select('id')
-        .limit(1)
-      
-      if (roomsError) {
-        console.error('Error fetching chat rooms:', roomsError)
-        return NextResponse.json({ error: 'Failed to fetch chat rooms' }, { status: 500 })
-      }
-      
-      console.log('Fetched rooms:', rooms)
-      const roomId = rooms && rooms.length > 0 ? rooms[0].id : null
-      
-      if (!roomId) {
-        console.error('No chat room found')
-        return NextResponse.json({ error: 'No chat room found' }, { status: 500 })
-      }
-      
-      // スーパーチャットメッセージをチャットに追加
-      const formattedAmount = new Intl.NumberFormat('ja-JP', {
-        style: 'currency',
-        currency: 'JPY'
-      }).format(amount ? amount / 100 : 0)
-      
-      const superChatMessage = `💰 ${formattedAmount} スーパーチャット: ${message}`
-      console.log('Inserting superchat message:', superChatMessage)
-      
-      const messageData = {
-        chat_room_id: roomId,
+      // super_chats テーブルへ直接挿入する
+      const superChatData = {
         user_id: userId,
-        content: superChatMessage,
-        type: 'superchat',
-        amount: amount ? amount / 100 : 0
+        influencer_id: influencerId,
+        room_id: null,  // チャットルームとの紐付けを解除
+        amount: amount ? amount / 100 : 0, // 必要に応じて単位変換
+        message: message,
+        stripe_session_id: session.id,
       }
       
-      console.log('Message data:', messageData)
+      console.log('Inserting super chat data:', superChatData)
+      
       const { error: insertError } = await supabase
-        .from('messages')
-        .insert(messageData)
-
+        .from('super_chats')
+        .insert(superChatData)
+      
       if (insertError) {
-        console.error('Failed to insert superchat message:', insertError)
-        return NextResponse.json({ error: 'Failed to insert message' }, { status: 500 })
+        console.error('Failed to insert super chat:', insertError)
+        return NextResponse.json({ error: 'Failed to insert super chat' }, { status: 500 })
       }
 
-      console.log('Successfully inserted superchat message')
+      console.log('Successfully inserted super chat')
       return NextResponse.json({ success: true })
     } catch (error: any) {
       console.error('Error processing webhook:', error)

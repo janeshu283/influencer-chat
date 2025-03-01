@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     // リクエストからデータを受け取る
     const json = await request.json()
-    const { amount, message, userId = randomUUID() } = json
+    const { amount, message, userId = randomUUID(), influencerId, roomId } = json
 
     console.log('Received payment request:', json)
 
@@ -54,9 +54,10 @@ export async function POST(request: Request) {
       success_url: `${siteUrl}/chat?success=true`,
       cancel_url: `${siteUrl}/chat?canceled=true`,
       metadata: {
-        superChatId: superChatId,
-        userId: userId,
-        message: message || ''
+        superChatId: randomUUID(),
+        message: message || '',
+        userId: userId,           // 送信者
+        influencerId: influencerId // 受信者（インフルエンサー）
       }
     })
 
