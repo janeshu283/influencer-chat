@@ -54,10 +54,11 @@ export async function POST(request: Request) {
       success_url: `${siteUrl}/chat?success=true`,
       cancel_url: `${siteUrl}/chat?canceled=true`,
       metadata: {
-        superChatId: randomUUID(),
+        superChatId: superChatId,
         message: message || '',
         userId: userId,           // 送信者
-        influencerId: influencerId // 受信者（インフルエンサー）
+        influencerId: influencerId, // 受信者（インフルエンサー）
+        roomId: roomId            // チャットルームID
       }
     })
 

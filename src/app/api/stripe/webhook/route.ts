@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   console.log('Webhook received')
   
   const body = await req.text()
-  const signature = headers().get('stripe-signature') || ''
+  const signature = (await headers()).get('stripe-signature') || ''
 
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
     console.error('Missing STRIPE_WEBHOOK_SECRET environment variable')
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
     const superChatId = session.metadata?.superChatId
     const userId = session.metadata?.userId
     const influencerId = session.metadata?.influencerId
+    const roomId = session.metadata?.roomId
     const message = session.metadata?.message || 'スーパーチャットありがとうございます！'
     const amount = session.amount_total
 
@@ -74,8 +75,8 @@ export async function POST(req: Request) {
         id: superChatId, // metadata で生成した一意のID
         user_id: userId,
         influencer_id: influencerId,
-        // チャットルームとの紐付けが不要な場合は null または不要にする
-        room_id: null,
+        // チャットルームIDをメタデータから取得
+        room_id: roomId,
         amount: amount ? amount / 100 : 0, // 単位は円に変換
         message: message,
         status: session.payment_status, // 例: "paid"

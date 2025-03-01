@@ -78,6 +78,7 @@ export interface Message {
 
 // ここで SuperChat 型を追加
 export interface SuperChat {
+  user: any
   id: string
   user_id: string         // 送信者
   influencer_id: string   // 受信者（インフルエンサー）

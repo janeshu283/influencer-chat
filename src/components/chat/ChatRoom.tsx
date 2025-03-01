@@ -34,7 +34,7 @@ export default function SuperChatList({ roomId }: { roomId: string }) {
       {superChats.map(chat => (
         <div key={chat.id} className="p-2 my-2 border rounded">
           <div className="font-bold">
-            {chat.user?.username} → {chat.influencer_id?.user}
+            {chat.user?.username} → {chat.influencer?.username}
           </div>
           <div>
             {chat.amount}円 : {chat.message}

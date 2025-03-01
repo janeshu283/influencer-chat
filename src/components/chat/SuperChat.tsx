@@ -7,7 +7,7 @@ interface SuperChatProps {
   roomId?: string
 }
 
-export default function SuperChat({ influencerId, influencerName }: SuperChatProps) {
+export default function SuperChat({ influencerId, influencerName, roomId }: SuperChatProps) {
   const [amount, setAmount] = useState<number>(500)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,7 +39,9 @@ export default function SuperChat({ influencerId, influencerName }: SuperChatPro
         },
         body: JSON.stringify({
           amount,
-          message
+          message,
+          influencerId,
+          roomId
         })
       })
 
