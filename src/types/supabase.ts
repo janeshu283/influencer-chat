@@ -82,7 +82,7 @@ export interface SuperChat {
   id: string
   user_id: string         // 送信者
   influencer_id: string   // 受信者（インフルエンサー）
-  room_id: string
+  room_id?: string | null
   amount: number
   message?: string
   status?: string         // 例: 'pending' など
