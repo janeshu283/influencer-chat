@@ -1,4 +1,3 @@
-// /src/app/api/stripe/webhook/route.ts
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
@@ -11,7 +10,6 @@ export async function POST(req: Request) {
   const body = await req.text()
   const signature = (await headers()).get('stripe-signature') || ''
 
-  // webhook secretが設定されていない場合のエラーハンドリング
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
     console.error('Missing STRIPE_WEBHOOK_SECRET environment variable')
     return NextResponse.json(
@@ -33,14 +31,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 400 })
   }
 
-  // チェックアウトセッション完了イベントを処理
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     console.log('Session data:', JSON.stringify(session, null, 2))
     
-    // メタデータからスーパーチャット情報を取得
-    // ※ この実装では、metadataに influencerId も設定している前提です
-    const superChatId = session.metadata?.superChatId  // （必要に応じて使用）
+    // metadata に userId, influencerId, message を設定している前提
+    const superChatId = session.metadata?.superChatId // （必要に応じて使用）
     const userId = session.metadata?.userId
     const influencerId = session.metadata?.influencerId
     const message = session.metadata?.message || 'スーパーチャットありがとうございます！'
@@ -51,7 +47,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true })
     }
 
-    // 支払い完了をログに記録
     console.log('Payment completed:', {
       superChatId,
       userId,
@@ -62,7 +57,6 @@ export async function POST(req: Request) {
     })
 
     try {
-      // Supabaseクライアントの初期化
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         throw new Error('Supabase credentials are not configured')
       }
@@ -76,12 +70,12 @@ export async function POST(req: Request) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
       
-      // super_chats テーブルへ直接挿入する
+      // super_chats テーブルへ挿入（チャットルームとの紐付けは不要とする）
       const superChatData = {
         user_id: userId,
         influencer_id: influencerId,
-        room_id: null,  // チャットルームとの紐付けを解除
-        amount: amount ? amount / 100 : 0, // 必要に応じて単位変換
+        room_id: null, // 既存のチャットルームとの紐付けを解除
+        amount: amount ? amount / 100 : 0,
         message: message,
         stripe_session_id: session.id,
       }
@@ -105,6 +99,5 @@ export async function POST(req: Request) {
     }
   }
 
-  // その他のイベントは正常に受信したことを返す
   return NextResponse.json({ received: true })
 }
