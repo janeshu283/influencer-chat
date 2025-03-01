@@ -104,7 +104,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
       const { data, error } = await supabase
         .from('messages')
         .select('*, type, amount, sender:profiles(*)')
-        .eq('room_id', roomId)
+        .eq('chat_room_id', roomId)
         .order('created_at')
 
       if (error) {
