@@ -132,7 +132,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `room_id=eq.${roomId}`,
+          filter: `chat_room_id=eq.${roomId}`,
         },
         async (payload) => {
           // 送信者の情報を取得
@@ -146,7 +146,7 @@ export default function ChatRoom({ roomId, currentUserId }: ChatRoomProps) {
             const newMessage: Message & { sender: Profile } = {
               id: payload.new.id,
               created_at: payload.new.created_at,
-              chat_room_id: payload.new.room_id,
+              chat_room_id: payload.new.chat_room_id,
               user_id: payload.new.sender_id,
               content: payload.new.content,
               type: payload.new.type,
