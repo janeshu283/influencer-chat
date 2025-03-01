@@ -75,3 +75,16 @@ export interface Message {
   type?: 'text' | 'superchat'
   amount?: number
 }
+
+// ここで SuperChat 型を追加
+export interface SuperChat {
+  id: string
+  user_id: string         // 送信者
+  influencer_id: string   // 受信者（インフルエンサー）
+  room_id: string
+  amount: number
+  message?: string
+  status?: string         // 例: 'pending' など
+  stripe_session_id?: string
+  created_at: string
+}

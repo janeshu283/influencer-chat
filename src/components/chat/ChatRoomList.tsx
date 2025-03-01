@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import OnlineStatus from '@/components/common/OnlineStatus'
-import type { ChatRoom, Profile } from '@/types/supabase'
+import type { ChatRoom } from '@/types/supabase'
 
 interface ChatRoomListProps {
   currentUserId: string
@@ -14,86 +13,50 @@ export default function ChatRoomList({
   onSelectRoom,
   selectedRoomId,
 }: ChatRoomListProps) {
-  const [rooms, setRooms] = useState<(ChatRoom & { influencer: Profile; user: Profile })[]>([])
+  const [rooms, setRooms] = useState<ChatRoom[]>([])
   const [loading, setLoading] = useState(true)
-  const [isInfluencer, setIsInfluencer] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-
-  // Using the imported supabase instance
 
   useEffect(() => {
     const loadRooms = async () => {
-      // まずユーザープロファイルを取得
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('is_influencer')
-        .eq('id', currentUserId)
-        .single()
-
-      setIsInfluencer(userProfile?.is_influencer || false)
-
-      let query = supabase
+      // ここでは、チャットルームテーブルに加えて、
+      // profilesテーブルから user と influencer の情報を取得する
+      const { data, error } = await supabase
         .from('chat_rooms')
         .select(`
-          *,
-          user:profiles!chat_rooms_user_id_fkey (id, nickname, profile_image_url, is_influencer),
-          influencer:profiles!chat_rooms_influencer_id_fkey (id, nickname, profile_image_url, is_influencer)
+          id,
+          user_id,
+          influencer_id,
+          last_message,
+          last_message_time,
+          user:profiles!chat_rooms_user_id_fkey(*),
+          influencer:profiles!chat_rooms_influencer_id_fkey(*)
         `)
-
-      if (userProfile?.is_influencer) {
-        // インフルエンサーの場合、自分が参加しているルームを取得
-        query = query.eq('influencer_id', currentUserId)
-      } else {
-        // 一般ユーザーの場合、自分が参加しているルームを取得
-        query = query.eq('user_id', currentUserId)
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Error loading chat rooms:', error)
-        return
+      } else if (data) {
+        setRooms(data)
       }
-
-      console.log('Loaded rooms:', data)
-      console.log('Is influencer:', userProfile?.is_influencer)
-
-      setRooms(data || [])
       setLoading(false)
     }
 
     loadRooms()
-
-    // リアルタイムサブスクリプション
-    const subscription = supabase
-      .channel('chat_rooms')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_rooms',
-        },
-        loadRooms
-      )
-      .subscribe()
-
-    return () => {
-      subscription.unsubscribe()
-    }
   }, [currentUserId])
+
+  const filteredRooms = rooms.filter(room => {
+    // 例として、一般ユーザーの場合は相手（influencer）のニックネームでフィルターする
+    const partnerName = room.influencer?.username ?? ''
+    return partnerName.toLowerCase().includes(searchTerm.toLowerCase())
+  })
 
   if (loading) {
     return <div className="p-4">Loading...</div>
   }
 
-  const filteredRooms = rooms.filter(room => {
-    const partner = isInfluencer ? room.user : room.influencer
-    return partner.nickname?.toLowerCase().includes(searchTerm.toLowerCase())
-  })
-
   return (
-    <div className="divide-y">
+    <div>
       <div className="p-4 border-b">
         <input
           type="text"
@@ -104,40 +67,29 @@ export default function ChatRoomList({
         />
       </div>
       {filteredRooms.length === 0 ? (
-        <div className="p-4 text-gray-500 text-center">
-          トークがありません
-        </div>
+        <div className="p-4 text-gray-500 text-center">トークがありません</div>
       ) : (
-        filteredRooms.map((room) => (
+        filteredRooms.map(room => (
           <button
             key={room.id}
             onClick={() => onSelectRoom(room.id)}
-            className={`w-full p-2 text-left hover:bg-pink-50 ${
-              selectedRoomId === room.id ? 'bg-pink-100' : ''
-            }`}
+            className={`w-full p-4 text-left hover:bg-pink-50 ${selectedRoomId === room.id ? 'bg-pink-100' : ''}`}
           >
             <div className="flex items-center space-x-3">
+              {/* 例えば、相手（influencer）のプロフィール画像を表示 */}
               <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-                <img
-                  src={isInfluencer ? room.user.profile_image_url : room.influencer.profile_image_url}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+                {room.influencer?.avatar_url && (
+                  <img
+                    src={room.influencer.avatar_url}
+                    alt={room.influencer.username || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold truncate">
-                  <>
-                    {isInfluencer
-                      ? (room.user.nickname || '一般ユーザー')
-                      : (room.influencer.nickname || 'インフルエンサー')
-                    }
-                    {process.env.NODE_ENV === 'development' && ` (ID: ${isInfluencer ? room.user_id : room.influencer_id})`}
-                  </>
+                  {room.influencer?.username || 'インフルエンサー'}
                 </div>
-                <OnlineStatus
-                  userId={isInfluencer ? room.user_id : room.influencer_id}
-                  className="mt-1"
-                />
                 <div className="text-sm text-gray-500 truncate">
                   {room.last_message || 'メッセージなし'}
                 </div>
@@ -149,7 +101,6 @@ export default function ChatRoomList({
           </button>
         ))
       )}
-
     </div>
   )
 }
