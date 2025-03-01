@@ -15,7 +15,7 @@ interface ChatRoomHeader {
   onSendSuperChat: (amount: number) => Promise<void>;
 }
 
-function ChatRoomHeader({ profile, onSendSuperChat }: ChatRoomHeader) {
+function ChatRoomHeader({ profile, roomId, currentUserId, onSendSuperChat }: ChatRoomHeader) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   return (
