@@ -219,7 +219,7 @@ export default function ChatRoomPage() {
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 ring-2 ring-pink-100">
                 {profile?.profile_image_url ? (
                   <img
-                    src={profile.profile_image_url}
+                    src={profile.profile_image_url || ''}
                     alt={profile.nickname || 'Profile'}
                     className="w-full h-full object-cover"
                   />

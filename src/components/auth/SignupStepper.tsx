@@ -22,6 +22,7 @@ interface SignupData {
 }
 
 export default function SignupStepper() {
+  console.log('Initializing SignupStepper component');
   const [step, setStep] = useState(1)
   const [data, setData] = useState<SignupData>({
     nickname: '',
@@ -38,8 +39,11 @@ export default function SignupStepper() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [showSharing, setShowSharing] = useState(false)
+  const [loading, setLoading] = useState(false) // Add loading state
   const { signUp } = useAuth()
   const router = useRouter()
+  
+  console.log('SignupStepper state initialized with loading state:', { loading })
 
   const validateStep = async () => {
     setError('')
@@ -78,7 +82,21 @@ export default function SignupStepper() {
 
   // 非インフルエンサーの場合、またはSNS共有画面で「終了」ボタンを押したときに実際の登録を行う
   const handleFinalSubmit = async () => {
+    console.log('handleFinalSubmit called with data:', {
+      email: data.email,
+      nickname: data.nickname,
+      userId: data.userId,
+      isInfluencer: data.isInfluencer,
+      // Omitting password for security
+    });
+    
     try {
+      console.log('Setting error state to empty and loading state to true');
+      setError('');
+      setLoading(true);
+      console.log('Current loading state:', loading);
+      
+      console.log('Calling signUp function...');
       await signUp(data.email, data.password, {
         nickname: data.nickname,
         userId: data.userId,
@@ -86,10 +104,25 @@ export default function SignupStepper() {
         x: data.x,
         tiktok: data.tiktok,
         profileImage: data.profileImage,
-      })
-      router.push('/influencers')
-    } catch (error) {
-      console.error('Signup error:', error)
+        isInfluencer: data.isInfluencer, // Pass the isInfluencer flag
+      });
+      console.log('signUp completed successfully');
+      
+      // Note: router.push is now handled in the signUp function
+      // to properly direct users based on whether they're new or existing
+    } catch (error: any) {
+      console.error('Signup error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      });
+      // Display a user-friendly error message
+      setError(error.message || '登録中にエラーが発生しました。もう一度お試しください。');
+    } finally {
+      console.log('Setting loading state to false');
+      setLoading(false);
+      console.log('Final loading state:', loading);
     }
   }
 
@@ -317,11 +350,23 @@ https://giftalk.co/
               </div>
             </div>
             <div className="mt-6">
+              {error && <div className="mb-4 p-3 rounded-md bg-red-50 text-red-700 text-sm">{error}</div>}
               <button
                 onClick={handleFinalSubmit}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:bg-pink-300 disabled:cursor-not-allowed"
               >
-                終了
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    処理中...
+                  </>
+                ) : (
+                  '終了'
+                )}
               </button>
             </div>
           </div>
@@ -354,9 +399,20 @@ https://giftalk.co/
           <div className="mt-6">
             <button
               onClick={handleNext}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:bg-pink-300 disabled:cursor-not-allowed"
             >
-              {step === maxStep ? '登録する' : '次へ→'}
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  処理中...
+                </>
+              ) : (
+                step === maxStep ? '登録する' : '次へ→'
+              )}
             </button>
           </div>
         </div>
