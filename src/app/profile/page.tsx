@@ -39,7 +39,7 @@ export default function ProfilePage() {
 
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}-${Date.now()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      const filePath = `${fileName}`
 
       console.log('Uploading profile image:', filePath)
       const { error: uploadError, data: uploadData } = await supabase.storage

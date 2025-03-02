@@ -93,13 +93,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Handle profile image upload if provided for existing users
           let profileImageUrl = null;
           if (profile.profileImage) {
-            try {
-              const file = profile.profileImage;
-              const fileExt = file.name.split('.').pop();
-              const fileName = `${existingUserData.user.id}-${Date.now()}.${fileExt}`;
-              const filePath = `avatars/${fileName}`;
+            const file = profile.profileImage;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${existingUserData.user.id}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
 
-              console.log('Uploading profile image for existing user:', filePath);
+            console.log('Uploading profile image for existing user:', filePath);
+            try {
               const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
@@ -120,29 +120,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
           
-          try {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .upsert({
-                id: existingUserData.user.id,
-                email: email,
-                nickname: profile.nickname,
-                instagram: profile.instagram,
-                x: profile.x,
-                tiktok: profile.tiktok,
-                is_influencer: isInfluencer,
-                // Add profile image URL if available
-                ...(profileImageUrl && { profile_image_url: profileImageUrl }),
-                // Removed user_id field as it doesn't exist in the profiles table
-              }, { onConflict: 'id' });
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: existingUserData.user.id,
+              email: email,
+              nickname: profile.nickname,
+              instagram: profile.instagram,
+              x: profile.x,
+              tiktok: profile.tiktok,
+              is_influencer: isInfluencer,
+              // Add profile image URL if available
+              ...(profileImageUrl && { profile_image_url: profileImageUrl }),
+            }, { onConflict: 'id' });
 
-            if (profileError) {
-              console.error('Profile update error details:', JSON.stringify(profileError));
-              throw new Error(`Profile update failed: ${profileError.message || 'Unknown error'}`);
-            }
-          } catch (profileUpdateError) {
-            console.error('Profile update error:', profileUpdateError);
-            throw profileUpdateError;
+          if (profileError) {
+            console.error('Profile update error details:', JSON.stringify(profileError));
+            throw new Error(`Profile update failed: ${profileError.message || 'Unknown error'}`);
           }
         }
         
@@ -173,13 +167,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Handle profile image upload if provided
         let profileImageUrl = null;
         if (profile.profileImage) {
-          try {
-            const file = profile.profileImage;
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${data.user.id}-${Date.now()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
+          const file = profile.profileImage;
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${data.user.id}-${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
 
-            console.log('Uploading profile image:', filePath);
+          console.log('Uploading profile image:', filePath);
+          try {
             const { error: uploadError } = await supabase.storage
               .from('avatars')
               .upload(filePath, file);
@@ -200,29 +194,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        try {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: data.user.id,
-              email: email,
-              nickname: profile.nickname,
-              instagram: profile.instagram,
-              x: profile.x,
-              tiktok: profile.tiktok,
-              is_influencer: isInfluencer,
-              // Add profile image URL if available
-              ...(profileImageUrl && { profile_image_url: profileImageUrl }),
-              // Removed user_id field as it doesn't exist in the profiles table
-            }, { onConflict: 'id' });
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: email,
+            nickname: profile.nickname,
+            instagram: profile.instagram,
+            x: profile.x,
+            tiktok: profile.tiktok,
+            is_influencer: isInfluencer,
+            // Add profile image URL if available
+            ...(profileImageUrl && { profile_image_url: profileImageUrl }),
+          }, { onConflict: 'id' });
 
-          if (profileError) {
-            console.error('Profile creation error details:', JSON.stringify(profileError));
-            throw new Error(`Profile creation failed: ${profileError.message || 'Unknown error'}`);
-          }
-        } catch (profileCreateError) {
-          console.error('Profile creation error:', profileCreateError);
-          throw profileCreateError;
+        if (profileError) {
+          console.error('Profile creation error details:', JSON.stringify(profileError));
+          throw new Error(`Profile creation failed: ${profileError.message || 'Unknown error'}`);
         }
       }
       
@@ -250,8 +238,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // If we have a session, proceed with sign out
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('Error signing out:', error);
+        // Even if there's an error, clear local state and redirect
+        setSession(null);
+        setUser(null);
+        router.push('/');
+        return;
+      }
       
+      // If successful, clear state and redirect
+      setSession(null);
+      setUser(null);
       router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);
